@@ -7,24 +7,23 @@
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
 
     <script>
-      var dataDiv = document.createElement('div')
 
-      //dataDiv.innerText = `<%= data.count %>`
-      //console.log(JSON.stringify(dataDiv.innerText));
-      //var rcount =  `<%= data.count %>`
-      //var karray =  `<%= data.keywords %>`
-      //var carray =  `<%= data.category1s %>`
-      // console.log(typeof data)
-
+      // table.setData로 처리하는 것도 한 방법일 수도...
+      // table.setData(URL) 이런식으로 아쟉스 요청 가능
+      // table.setData() 이러면 리로드 됨.
       $(document).ready( function(){
-        /*
-        var ctable = new Tabulator("#tb_keywords", {
 
+        var ctable = new Tabulator("#tb_category2", {
+          ajaxURL : "http://localhost:3000/typos/getTableData",
+          ajaxParams : { size : "1" },
+          ajaxConfig : "POST",
           layout : "fitDataFill",
+          ajaxContentType:"json",
           autoColumns : true
         })
-        */
-        var ctable = new Tabulator('#sctable', {});
+        console.log(ctable)
+
+
       });
 
     </script>
@@ -35,32 +34,30 @@
         <h4 style="margin-top: 30px;"> 대분류 </h4>
         <ul style="margin-top: 30px;">
       
-          <% for(let i = 0; i < data.category1s.length; i++){ %>
-            <li><%= data.category1s[i].category1 %> ( <%= data.category1s[i].count %> )</li>
+          <% for(let i = 0; i < data1.cate1s.length; i++){ %>
+            <li><%= data1.cate1s[i].category1 %> ( <%= data1.cate1s[i].count %> )</li>
           <% } %>
         </ul>
       </div>
       <div class="col-md-10">
         <p>키워드목록</p>
-        
+        <!--
         <table id="sctable">
+
           <thead>
             <tr>
-              <th class="center">중분류 <a>^</a></th>
-              <th class="center">키워드 수<a>^</a></th>
+                        
+              <th class="center">중분류 </th>
+              <th class="center">키워드 수 </th>
+                        
             </tr>
           </thead>
+
           <tbody>
-            <% for(let i = 0; i < data.keywords.length ; i++ ){ %>
-              <tr>
-                <td> <%= data.keywords[i].keyword %></td> 
-                <td> <%= data.keywords[i].category2 %></td>
-              </tr>
-            <% console.log(data.keywords)} %>
           </tbody>
         </table>
-        
-        <div id="tb_keywords">
+        -->
+        <div id="tb_category2">
 
         </div>
       </div>
