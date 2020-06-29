@@ -1,0 +1,92 @@
+body {
+  padding: 10px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #04aefd;
+}
+
+table {
+  padding : 1px;
+}
+
+div.header {
+  background-color: gray;
+}
+
+div.main {
+  width: 95%
+}
+
+div.category {
+  width: 15%;
+  background-color: beige;
+}
+
+div.row {
+  display:flex;
+}
+
+div.col {
+  display:block ;
+  position:relative ;
+}
+
+div.search-box {
+  display:block;
+  margin: 30px;
+
+}
+
+div.button-box {
+  margin: 10px
+}
+
+div.tableWrapper {
+  display:block;
+}
+
+div#categorySection {
+  height: 600px;
+}
+
+ul#horizontal-list {
+	min-width: 696px;
+	list-style: none;
+  padding-top: 20px;
+  list-style-type: square;
+}
+
+ul#horizontal-list li {
+		display: inline;
+}
+
+a.menu-button {
+  margin: 20px;
+}
+
+table.main-content {
+  width: 100%;
+  border: 1px solid #dee2e6;
+}
+
+td.left {
+  text-align: left;
+}
+
+td.center {
+  text-align: center;
+}
+
+th.left {
+  text-align: left;
+}
+
+th.center {
+  text-align: center;
+}
+
+button.middle-box {
+  margin: 10px;
+}

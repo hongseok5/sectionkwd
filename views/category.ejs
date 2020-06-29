@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <% include ./index %>
+    <script>
+
+
+
+      $(document).ready( function () {
+        /*
+        let table = $('#mytable').DataTable({
+          ajax:           'http://localhost:3000/category/data',
+          scrollY:        200,
+          paging: false,
+          deferRender:    true,
+          scroller:       true        
+        });
+        table.draw()
+
+               */
+        $("#rmvCategory1").hide();        
+        
+        $("#addCategory1").off().on("click", function(){
+          $("#rmvCategory1").show();
+          $("#category1List > li:last-child").append("<li><input type='text'>" + "</li>");
+          //$("#rmvCategory1").off();
+        });
+
+
+        $("#rmvCategory1").off().on("click", function(){
+            $("#category1List li:last-child").remove();
+        });
+
+        $("#addCategory2").off().on("click", function(){
+          $("tbody:nth-child(1)").append("<tr> <td>1</td> <td>2</td> <td>3</td> <td>4</td> </tr>");
+        });
+
+        $("#edtCategory2").off().on("click", function(){
+            $("#category1List li:last-child").remove();
+        });
+
+        $("#mrgCategory2").off().on("click", function(){
+            $("#category1List li:last-child").remove();
+        });
+
+      });
+    </script>
+
+
+    <div class="row">
+      <div class="col" style="width:20%; background-color: beige;" id="categorySection">
+        <p style="text-align: justify;">대분류          
+          <button id="addCategory1" type="button"> + </button>
+          <button id="rmvCategory1" type="button"> - </button>
+        </p> 
+        <ul class="category-list" id="category1List">
+
+          
+          <% for(let i = 0; i < data2.length; i++) { %>
+            
+            <li><%= data2[i].category1 %></li>
+
+          <% }  %>
+
+        </ul>
+      </div>
+      <div class="col" style="width:80%">
+        <div class="search-box" id="categorySearch">
+          <form>
+            <input type="text" placeholder="검색어" id="searchKeyword">
+            <button>검색</button>
+          </form>
+        </div>
+        <div class="button-box">
+          <button class="middle-box" id="addCategory2">+</button>
+          <button class="middle-box" id="edtCategory2">edit</button>
+          <button class="middle-box" id="mrgCategory2">merge</button>
+        </div>
+        <div>
+          <table class="main-content" id="mytable">
+            <thead>
+              <tr>
+                <th class="center"><input type="checkbox"></th>
+                <th class="center">중분류 <a>^</a></th>
+                <th class="center">키워드 수<a>^</a></th>
+                <th class="center">삭제</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <% for(var d of data2) { %>
+                <tr> 
+                  <td class="center"> <input type="checkbox"></td>
+                  <td class="center"> <a><%= d.category1 %></a></td>
+                  <td class="center"> <a><%= d.category2 %></a></td>
+                  <td class="center"> <button>삭제</button></td>
+                </tr>
+              <% }  %>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

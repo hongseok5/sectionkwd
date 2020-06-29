@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
+
+    <script>
+      var dataDiv = document.createElement('div')
+
+      //dataDiv.innerText = `<%= data.count %>`
+      //console.log(JSON.stringify(dataDiv.innerText));
+      //var rcount =  `<%= data.count %>`
+      //var karray =  `<%= data.keywords %>`
+      //var carray =  `<%= data.category1s %>`
+      // console.log(typeof data)
+
+      $(document).ready( function(){
+        /*
+        var ctable = new Tabulator("#tb_keywords", {
+
+          layout : "fitDataFill",
+          autoColumns : true
+        })
+        */
+        var ctable = new Tabulator('#sctable', {});
+      });
+
+    </script>
+  </head>
+  <body>
+    <div class="row">
+      <div class="col-md-2">
+        <h4 style="margin-top: 30px;"> 대분류 </h4>
+        <ul style="margin-top: 30px;">
+      
+          <% for(let i = 0; i < data.category1s.length; i++){ %>
+            <li><%= data.category1s[i].category1 %> ( <%= data.category1s[i].count %> )</li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="col-md-10">
+        <p>키워드목록</p>
+        
+        <table id="sctable">
+          <thead>
+            <tr>
+              <th class="center">중분류 <a>^</a></th>
+              <th class="center">키워드 수<a>^</a></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for(let i = 0; i < data.keywords.length ; i++ ){ %>
+              <tr>
+                <td> <%= data.keywords[i].keyword %></td> 
+                <td> <%= data.keywords[i].category2 %></td>
+              </tr>
+            <% console.log(data.keywords)} %>
+          </tbody>
+        </table>
+        
+        <div id="tb_keywords">
+
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
