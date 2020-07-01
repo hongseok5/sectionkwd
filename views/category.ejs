@@ -1,110 +1,147 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
+
+    <script>
+      /*
+      var printButton = (cell, formatterParams, onRendered) => {
+        if(formatterParams.add){
+          return "<button>취소</button>"
+        } else {
+          return "<button>삭제</button>"
+        }
+      }
+      */
+      var ctable;
+      var insertData = ( dataArray ) => {
+        if( dataArray !== undefined && dataArray.length < 1){
+          console.log("No updating data")
+        } else {
+          $.ajax({
+            url : "http://localhost:3000/category/insertData",
+            type : "POST",
+            data : JSON.stringify(dataArray),
+            contentType : "application/json",
+            // dataType : "text",
+            error : function(e){
+              console.log(e)
+            },
+            success : function( response ){
+              if(response == "OK"){
+                ctable.setData();
+              } else {
+                alert("not successful")
+              }
+            }
+          })
+        }
+      }
+
+      var loadData = (cate1) => {
+        var url = "http://localhost:3000/category/getTableData?cate1="
+        ctable.setData(url + cate1)
+      }
+
+      var printChk = (cell, formatterParams, onRendered) => {
+        return "<input type='checkbox'>"        
+      }
+
+      var prtCntLnk = (cell, formatterParams, onRendered) => {
+        return `<a href='http://localhost:3000/keywords?cate2=${cell.getRow().getData().cate2}'> ${cell.getValue()} </a>`;
+      }
+
+      // table.setData로 처리하는 것도 한 방법일 수도...
+      // table.setData(URL) 이런식으로 아쟉스 요청 가능
+      // table.setData() 이러면 리로드 됨.
+      
+      $(document).ready( function(){
+
+        ctable = new Tabulator("#tb_category2", {
+          ajaxURL : "http://localhost:3000/category/getTableData",
+          //ajaxParams : { size : "1" },
+          ajaxConfig : "GET",
+          layout : "fitData",
+          //ajaxContentType:"json",
+          columns : [
+            
+            {title : "<input type='checkbox'>", hozAlign:"center", formatter:printChk },
+            {title : "중분류", field : "cate2", width: 200, editor: "input"},
+            {title : "키워드 수", field : "count", formatter:prtCntLnk, hozAlign:"center", formatterParams : {add : false} },
+            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
+            {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
+            {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
+            {title : "esID", field : "isNew", hozAlign:"center", visible: false },
+            {title : "대분류", field : "isEdited", hozAlign:"center", visible: false },
+          ],
+          pagination : "local",
+          paginationSize : 20,
+          height : "500px",
+          width : "300px",
+          //tableBuilt : function(){ console.log("table built")},
+          cellEdited : function(cell){
+            var rowData = cell.getRow().getData();
+            if(rowData.isNew !== "Y"){
+              rowData.isEdited = "Y"
+            }           
+          }
+
+        })
+        //console.log(ctable)
+        document.getElementById("add-row").addEventListener("click", function(){
+          ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
+        });
+
+        document.getElementById("updt-data").addEventListener("click", function(){
+          var data = ctable.getData();
+          console.log(data)
+          var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)  
+          console.log(udata)                                                                                                                                   
+          insertData(udata)  
+
+        });
+      });
+
+    </script>
   </head>
   <body>
-    <% include ./index %>
-    <script>
-
-
-
-      $(document).ready( function () {
-        /*
-        let table = $('#mytable').DataTable({
-          ajax:           'http://localhost:3000/category/data',
-          scrollY:        200,
-          paging: false,
-          deferRender:    true,
-          scroller:       true        
-        });
-        table.draw()
-
-               */
-        $("#rmvCategory1").hide();        
-        
-        $("#addCategory1").off().on("click", function(){
-          $("#rmvCategory1").show();
-          $("#category1List > li:last-child").append("<li><input type='text'>" + "</li>");
-          //$("#rmvCategory1").off();
-        });
-
-
-        $("#rmvCategory1").off().on("click", function(){
-            $("#category1List li:last-child").remove();
-        });
-
-        $("#addCategory2").off().on("click", function(){
-          $("tbody:nth-child(1)").append("<tr> <td>1</td> <td>2</td> <td>3</td> <td>4</td> </tr>");
-        });
-
-        $("#edtCategory2").off().on("click", function(){
-            $("#category1List li:last-child").remove();
-        });
-
-        $("#mrgCategory2").off().on("click", function(){
-            $("#category1List li:last-child").remove();
-        });
-
-      });
-    </script>
-
-
     <div class="row">
-      <div class="col" style="width:20%; background-color: beige;" id="categorySection">
-        <p style="text-align: justify;">대분류          
-          <button id="addCategory1" type="button"> + </button>
-          <button id="rmvCategory1" type="button"> - </button>
-        </p> 
-        <ul class="category-list" id="category1List">
-
-          
-          <% for(let i = 0; i < data2.length; i++) { %>
-            
-            <li><%= data2[i].category1 %></li>
-
-          <% }  %>
-
+      <div class="col-md-2">
+        <h4 style="margin-top: 30px;"> 대분류 </h4>
+        <ul style="margin-top: 30px;">
+      
+          <% for(let i = 0; i < data1.cate1s.length; i++){ %>
+            <li>
+              <a href="#" onclick="loadData('<%= data1.cate1s[i].category1 %>')">
+                <%= data1.cate1s[i].category1 %> ( <%= data1.cate1s[i].count %> )
+              </a>              
+            </li>
+          <% } %>
         </ul>
       </div>
-      <div class="col" style="width:80%">
-        <div class="search-box" id="categorySearch">
+      <div class="col-md-8">
+        <h4 style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >카테고리 목록</h4>
+        <div style="padding: 50px 50px 50px 100px;">
           <form>
-            <input type="text" placeholder="검색어" id="searchKeyword">
+            <input type="text"> 
             <button>검색</button>
           </form>
         </div>
-        <div class="button-box">
-          <button class="middle-box" id="addCategory2">+</button>
-          <button class="middle-box" id="edtCategory2">edit</button>
-          <button class="middle-box" id="mrgCategory2">merge</button>
-        </div>
-        <div>
-          <table class="main-content" id="mytable">
-            <thead>
-              <tr>
-                <th class="center"><input type="checkbox"></th>
-                <th class="center">중분류 <a>^</a></th>
-                <th class="center">키워드 수<a>^</a></th>
-                <th class="center">삭제</th>
-              </tr>
-            </thead>
-            <tbody>
 
-              <% for(var d of data2) { %>
-                <tr> 
-                  <td class="center"> <input type="checkbox"></td>
-                  <td class="center"> <a><%= d.category1 %></a></td>
-                  <td class="center"> <a><%= d.category2 %></a></td>
-                  <td class="center"> <button>삭제</button></td>
-                </tr>
-              <% }  %>
+        <h4>
+          <button id="updt-data"> 저장 </button>
+          <button id="add-row"> 추가 </button>
+          <button id="mrg-row"> 병합 </button>
+        </h4>
+        <div id="tb_category2">
 
-            </tbody>
-          </table>
         </div>
       </div>
+      <div class="col-md-2"></div>
     </div>
+
   </body>
 </html>

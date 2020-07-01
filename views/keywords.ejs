@@ -1,278 +1,157 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-    <!--
-    <link rel='stylesheet' href='/stylesheets/bootstrap.min.css' />
-    <script src="../public/javascripts/bootstrap.min.js"></script>
-    <script src="../public/javascripts/jquery.min.js"></script>
-    <script src="../public/javascripts/jquery-ui.min.js"></script>
-    -->
-  </head>
-  <body>
-    <% include ./index %>
+    <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
+
     <script>
-      var isEnd = false
-      var ctx = 'http://localhost:3000'
-      var tableRow = [ " ", "<input type='text'>", "<input type='text'>", "<input type='text'>", "<input type='text'>", " " ]
-      var table = {
-        init : function(){
-         $("#mainTable").DataTable({
-            ajax : {
-
-              url : ctx + '/keywords',
-              type : "POST",
-              data : function(d){
-                // 라우터에 전달할 request 파라미터를 정의하는 부분
-                return $.extend({}, d, {koo : "gar"})
-              },
-              dataSrc : "data"
-
+      var category2 = '<%= cate2 %>'
+      var ctable;
+      var insertData = ( dataArray ) => {
+        if( dataArray !== undefined && dataArray.length < 1){
+          console.log("No updating data")
+        } else {
+          $.ajax({
+            url : "http://localhost:3000/category/insertData",
+            type : "POST",
+            data : JSON.stringify(dataArray),
+            contentType : "application/json",
+            // dataType : "text",
+            error : function(e){
+              console.log(e)
             },
-            rowId : 'keyword', 
-            searching : false,
-            scrollY:        200,
-            deferRender:    true,
-            scroller:       true,
-            columns : [    
-                              {  
-                                  width: '10px',
-                                  className: "center",
-                                  render: function ( data, type, row, meta ) {
-                                  return "";
-                                  },
-                                  createdCell: function(cell, cellData, rowData, rowIndex, colIndex){
-                                      var chkbox = $("<input type='checkbox' name='gridChkbox'></input>");
-                                      chkbox.click(function(){
-
-                                          if($(this).is(':checked') == false) {
-
-                                              $(this).prop('checked', false);
-                                              chkBox = false;
-                                              chkItem = "";
-                                          }else{
-
-                                              $('#userListTable_wrapper input[type=checkbox]').attr('checked', false);
-                                              $(this).prop('checked', true);
-                                              chkBox = true;
-                                              chkItem = rowData;
-                                          }
-                                          
-                                          idx = rowIndex;
-                                          
-                                      });
-                                      $(cell).html(chkbox);
-                                  }, defaultContent: ""
-                              },
-
-                      /*
-                      { data : "synonyms", defaultContent : '', className: "center"},
-                      { data : "related", defaultContent : '', className: "center"},
-                      { data : "typos", defaultContent : '', className: "center"},
-                      { data : "related", defaultContent : '', className: "center"},
-                      */
-                      { defaultContent : '', className: "center", data : "keyword",
-                          createdCell : (cell, cellData, rowIndex, colIndex) =>
-                        {
-                          return $(cell).html("<input type='text' readonly='true' placeholder='" + cellData+ "' >")
-                        }
-                      },
-                      { defaultContent : '', className: "center", data : "synonyms",
-                        createdCell : (cell, cellData, rowIndex, colIndex) =>
-                                    {
-                                      return $(cell).html("<input type='text' readonly='true' placeholder='" + cellData+ "' >")
-                                    } 
-                      },
-                      { defaultContent : '', className: "center", data : "relatedwds",
-                        createdCell : (cell, cellData, rowIndex, colIndex) =>
-                                    {
-                                      return $(cell).html("<input type='text' readonly='true' placeholder='" + cellData+ "' >")
-                                    } 
-                      },
-                      { defaultContent : '', className: "center", data : 'typos',
-                        createdCell : (cell, cellData, rowIndex, colIndex) =>
-                                    {
-                                      return $(cell).html("<input type='text' readonly='true' placeholder='" + cellData+ "' >")
-                                    } 
-                      },
-                      { defaultContent : '', className: "center", 
-                        createdCell : (cell, cellData, rowIndex, colIndex) =>
-                                    {
-                                      return $(cell).html("<button>삭제</button>")
-                                    } 
-                      }
-
-
-                      ]
-            /*
-                <th scope="col" style="text-align:center">키워드</th>
-                <th scope="col" style="text-align:center">동의어</th>
-                <th scope="col" style="text-align:center">연관어</th>
-                <th scope="col" style="text-align:center">오류키워드</th>
-                <th scope="col" style="text-align:center">편집</th>
-            */
+            success : function( response ){
+              if(response == "OK"){
+                ctable.setData();
+              } else {
+                alert("not successful")
+              }
+            }
           })
-        },
-
-        reload : function(){
-          $("#mainTable").DataTable().ajax.reload()
         }
-      };
+      }
 
-      var editTable = function(){
+      var loadData = (cate1) => {
+        var url = "http://localhost:3000/category/getTableData?cate1="
+        ctable.setData(url + cate1)
+      }
 
-      };
+      var printChk = (cell, formatterParams, onRendered) => {
+        return "<input type='checkbox'>"        
+      }
 
-      var deleteData = function(){
+      var prtCntLnk = (cell, formatterParams, onRendered) => {
+        return `<a href='http://localhost:3000/keywords/getTableData'> ${cell.getValue()} </a>`;
+      }
+      
+      $(document).ready( function(){
+        console.log("category2 : " + category2)
+        ctable = new Tabulator("#tb_category2", {
+          ajaxURL : "http://localhost:3000/keywords/getTableData?category2=" + category2,
+          //ajaxParams : { size : "1" },
+          ajaxConfig : "GET",
+          layout : "fitData",
+          columns : [
+            {title : "<input type='checkbox'>", hozAlign:"center", formatter:printChk },
+            {title : "esID", field : "isNew", hozAlign:"center", visible: false },
+            {title : "대분류", width: 100, field : "category1", hozAlign:"center", visible: false },
+            {title : "중분류", width: 300, field : "category2", hozAlign:"center", visible: false },
+            {title : "키워드", width: 100, field : "keyword", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "동의어", width: 300, field : "", editor: "input", hozAlign:"center" },
+            {title : "연관어", width: 300, field : "", editor: "input", hozAlign:"center" },
+            {title : "오류키워드", width: 300, field : "", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
+            {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
+            {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
+          ],
 
-      };
+          pagination : "local",
+          paginationSize : 20,
+          height : "500px",
+          // width : "300px",
+          cellEdited : function(cell){
+            var rowData = cell.getRow().getData();
+            if(rowData.isNew !== "Y"){
+              rowData.isEdited = "Y"
+            }           
+          }
 
-      var saveData = function(){
+        })
 
-      };
+        document.getElementById("add-row").addEventListener("click", function(){
+          ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
+          // ctable.addData([{ cate2 : null, count : 0 }], true); // default 는 false이고 true이면 행이 위에 생긴다.
+        });
 
+        document.getElementById("updt-data").addEventListener("click", function(){
+          var data = ctable.getData();
+          var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)                                                                                                                                  
+          insertData(udata)  
+        });
 
+        /* Test : 잘 됨
+        document.getElementById("ct1_2").addEventListener("click", function(){
+          console.log( document.querySelector("#ct1_2").textContent );  
+        })
+        */
 
-      $(document).ready(function(){
+        let ulList = document.querySelectorAll("ul[id^='category2s_'")
+        for( ul of ulList ){
+          ul.style.visibility='hidden';
+        }
+
+        let liList = document.querySelectorAll("#category1s > li")
+        for( li of liList){
+          li.addEventListener("click", function(){
+            console.log("clicked")
+          })
+
         
-        var mainTable = table.init();
-        $("#btnSearch").off().on("click", () => {
-          table.reload();
-        });
+        }
 
-        var counter = 1;
-
-        $("#addRow").on('click', function(){
-          $("#mainTable").DataTable().row.add(tableRow).draw(false);
-          counter++;
-        });
-
-        $("#editRow").on('click', function(){
-          
-        });
       });
 
-
     </script>
+  </head>
+  <body>
     <div class="row">
-      <div class="col-md-2" style="background-color: blanchedalmond;">
-        <p>대분류</p>
+      <div class="col-md-2">
+        <h4 style="margin-top: 30px; text-align: center; " > 카테고리 </h4>
+        <ul style="margin-top: 30px;" id="category1s">
+          <% for(let i = 0; i < ctList.length; i++) { %>
+            <li id="ct1_<%= i %>"> <%= ctList[i].key %> ( <%= ctList[i].ct2.buckets.length %> ) </li>
+            <ul id="category2s_<%= i %>">
+              <li> 전체 ( <%= ctList[i].doc_count %> ) </li>
+              <% for(let j = 0; j < ctList[i].ct2.buckets.length ; j++ ) { %>
+                <li> 
+                  <%= ctList[i].ct2.buckets[j].key %> ( <%= ctList[i].ct2.buckets[j].doc_count %> ) 
+                </li>
+              <% } %>
+            </ul>            
+          <% } %>
+        </ul>
       </div>
-      <div class="col-md-10">
-        <div class="search-box row">
-          <div class="col-lg-1">
-
-          </div>
-          <div class="col-lg-9">
-            <form style="margin-top:15px" id="searchForm">
-              <div class="form-row align-items-center">
-                <div class="col-sm-1"> </div>
-                <div class="col-sm-2">
-
-                  <label for="exampleFormControlSelect1"> 대분류 </label> 
-                      <select class="form-control" id="category1">
-                          <option>전체</option>
-                          <option>건강</option>
-                  </select>
-                  <br>
-                  <label for="exampleFormControlSelect1"> 동의어존재 </label> 
-              
-                  <select class="form-control" id="synonymYn">
-                      <option>전체</option>
-                      <option>유</option>
-                      <option>무</option>
-                  </select>
-                </div>
-                <div class="col-sm-2">
-                  <span>
-                      <label for="exampleFormControlSelect1"> 중분류 </label> 
-                  
-                          <select class="form-control" id="category2">
-                            <option>전체</option>
-                            <option>영양학</option>
-                            <option>생활건강</option>
-                      </select>
-                  </span>
-                  <br>
-                  <label for="exampleFormControlSelect1"> 연관어존재 </label> 
-              
-                  <select class="form-control" id="relwordYn">
-                    <option>전체</option>
-                    <option>유</option>
-                    <option>무</option>
-                  </select>
-                </div>
-                <div class="col-sm-2">
-
-                  <br>
-                  <br>
-                  <br>
-                  <br>
-                  <label for="exampleFormControlSelect1"> 오류키워드 </label> 
-                  
-                  <select class="form-control" id="typoYn">
-                    <option>전체</option>
-                    <option>유</option>
-                    <option>무</option>
-                  </select>
-                </div>
-                <div class="col-sm-2" style="padding-top: 22px;">
-
-                  <label class="sr-only" for="inlineFormInputGroup">검색어</label>
-                  <div class="input-group mb-2">
-                    <div class="input-group-prepend">
-                      <div class="input-group-text"></div>
-                    </div>
-                    <input type="text" class="form-control" id="searchKeyword" placeholder="검색어">
-                  </div>     
-                  <br>         
-                </div>
-                
-                <div class="col-sm-2" style="padding-top: 0px;">
-                  <button type="button" class="btn btn-outline-dark mb-2" id="btnSearch"> 검색 </button>
-                </div>
-                <div class="col-sm-1" style="padding-top: 150px; margin-bottom: 20px;">
-
-                </div>
-
-              </div>
+      <div class="col-md-8">
+        <h4 style="margin-top: 30px; margin-bottom: 50px;text-align: center;" > 키워드 목록 </h4>
+        <div style="padding: 50px 50px 50px 100px;">
+          <form>
+            <input type="text"> 
+            <button>검색</button>
           </form>
-            
-          </div>
-          <div class="col-lg-2">
-
-          </div>
         </div>
-        <div class="row button-box">
-          <div class="col-md-10">
-            <button class="btn btn-secondary" style="margin: 2px;" id="editRow"> 편집 </button>
-            <button class="btn btn-primary" style="margin: 2px;" id="addRow"> 추가 </button>
-          </div>
-          <div class="col-md-2">
 
-            <button class="btn btn-success" style="margin: 2px;" id="upload"> 엑셀업로드 </button>
-            <button class="btn btn-success" style="margin: 2px;" id="download"> 다운로드 </button>
-          </div>
-        </div>
-        <div>
-          <table id="mainTable">
-            <thead class="thead-light">
-              <tr>
-                <th scope="col" style="text-align:center"><input type="checkbox"> </th>
-                <th scope="col" style="text-align:center">키워드</th>
-                <th scope="col" style="text-align:center">동의어</th>
-                <th scope="col" style="text-align:center">연관어</th>
-                <th scope="col" style="text-align:center">오류키워드</th>
-                <th scope="col" style="text-align:center">편집</th>
-              </tr>
-            </thead>
-            <tbody>
-
-            </tbody>
-          </table>
-
+        <h4>
+          <button id="updt-data"> 저장 </button>
+          <button id="add-row"> 추가 </button>
+        </h4>
+        <div id="tb_category2">
+          <!-- 타뷸레이터 테이블 생성 -->
         </div>
       </div>
+      <div class="col-md-2"></div>
     </div>
+
   </body>
 </html>

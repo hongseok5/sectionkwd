@@ -7,23 +7,105 @@
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
 
     <script>
+      /*
+      var printButton = (cell, formatterParams, onRendered) => {
+        if(formatterParams.add){
+          return "<button>취소</button>"
+        } else {
+          return "<button>삭제</button>"
+        }
+      }
+      */
+      var insertData = ( dataArray ) => {
+        if( dataArray !== undefined && dataArray.length < 1){
+          console.log("No updating data")
+        } else {
+          $.ajax({
+            url : "http://localhost:3000/typos/insertData",
+            type : "POST",
+            data : JSON.stringify(dataArray),
+            contentType : "application/json",
+            // dataType : "text",
+            error : function(e){
+              console.log(e)
+            },
+            success : function( response ){
+              console.log(response)
+            }
+          })
+        }
+     
+      }
 
+      var printChk = (cell, formatterParams, onRendered) => {
+        return "<input type='checkbox'>"        
+      }
+
+      var prtCntLnk = (cell, formatterParams, onRendered) => {
+        return `<a href='#'> ${cell.getValue()} </a>`;
+      }
+      /*
+      var prtKwdLnk = (cell, formatterParams, onRendered) => {
+        return `<a href='#'> ${cell._cell.value} </a>`
+      }
+      */
       // table.setData로 처리하는 것도 한 방법일 수도...
       // table.setData(URL) 이런식으로 아쟉스 요청 가능
       // table.setData() 이러면 리로드 됨.
+
+      var editedArray = [];
+      // 기존의 셀이 수정되었을 때 저장하는 배열
+      
       $(document).ready( function(){
 
         var ctable = new Tabulator("#tb_category2", {
           ajaxURL : "http://localhost:3000/typos/getTableData",
           ajaxParams : { size : "1" },
           ajaxConfig : "POST",
-          layout : "fitDataFill",
+          layout : "fitDataTable",
           ajaxContentType:"json",
-          autoColumns : true
+          columns : [
+            {title : "<input type='checkbox'>", hozAlign:"center", formatter:printChk },
+          
+            {title : "중분류", field : "cate2", width: 200, editor: "input"},
+            {title : "키워드 수", field : "count", formatter:prtCntLnk, hozAlign:"center", formatterParams : {add : false} },
+            //{title : "삭제", field : "dbutton", hozAlign:"center", width: 100 , formatter:printButton, formatterParams : {add : false}},
+            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
+            {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
+            {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
+            {title : "esID", field : "isNew", hozAlign:"center", visible: false },
+            {title : "대분류", field : "isEdited", hozAlign:"center", visible: false },
+          ],
+          paginationSize : 20,
+          height : "500px",
+          width : "800px",
+          //tableBuilt : function(){ console.log("table built")},
+          cellEdited : function(cell){
+            var rowData = cell.getRow().getData();
+            if(rowData.isNew !== "Y"){
+              rowData.isEdited = "Y"
+            }
+            
+          },
         })
-        console.log(ctable)
+        //console.log(ctable)
+        document.getElementById("add-row").addEventListener("click", function(){
+          ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
+          // ctable.addData([{ cate2 : null, count : 0 }], true); // default 는 false이고 true이면 행이 위에 생긴다.
+        });
 
-
+        document.getElementById("updt-data").addEventListener("click", function(){
+          var data = ctable.getData();
+          console.log(data)
+          // isNew 로 
+          var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined) // 
+          // 값이 정상적으로 입력된 신규 데이터를 가져온다.   
+          console.log(udata)                                                                                                                                   
+          insertData(udata)                              
+        });
+        // 비동기 
+        // var test = document.querySelectorAll("#tb_category2 > div.tabulator-tableHolder > div > div > div:nth-child(2)")
+        // console.log(test);
       });
 
     </script>
@@ -39,28 +121,18 @@
           <% } %>
         </ul>
       </div>
-      <div class="col-md-10">
-        <p>키워드목록</p>
-        <!--
-        <table id="sctable">
-
-          <thead>
-            <tr>
-                        
-              <th class="center">중분류 </th>
-              <th class="center">키워드 수 </th>
-                        
-            </tr>
-          </thead>
-
-          <tbody>
-          </tbody>
-        </table>
-        -->
+      <div class="col-md-8">
+        <p style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >키워드목록</p>
+        <h4>
+          <button id="updt-data"> 저장 </button>
+          <button id="add-row"> 추가 </button>
+          <button id="mrg-row"> 병합 </button>
+        </h4>
         <div id="tb_category2">
 
         </div>
       </div>
+      <div class="col-md-2"></div>
     </div>
 
   </body>

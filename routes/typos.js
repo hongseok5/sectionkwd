@@ -51,8 +51,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/getTableData', function(req, res, next) { 
-  // ajax로 요청 받는다. 
-  console.log(JSON.stringify(req.body.size))
+
   let body = {
     query : { match_all : {}},
     size : req.body.size,
@@ -71,7 +70,6 @@ router.post('/getTableData', function(req, res, next) {
       }
     }
   }
-
   esclient.search({ index , body }).then(function(resp){
     let data2 = {}
     data2.cate2s = []
@@ -85,16 +83,48 @@ router.post('/getTableData', function(req, res, next) {
       }
     }
     res.status(200).send( data2.cate2s );
-    //res.send("typos", { data2 })
   }, function(err){
     console.log(err);
     res.render("typos", { message : "error"})
   });
-    
-  
 });
 
-router.post('/test', function(req, res, next) { 
-  console.log(JSON.stringify(req.body.foo))
+router.post('/insertData', function(req, res, next) { 
+  console.log("insertData")
+  count = 0;
+  var parray = []
+  for( d of req.body){
+    console.log(d)
+    var document = {
+      index : index,
+      type : "_doc",
+      // id : null,
+      body : {
+        doc : {
+          category2 : d.cate2,
+          category1 : "테스트",
+          keyword : d.cate2          
+        }
+        // doc_as_upsert : true
+      }
+    }
+    esclient.index(document).then(v => {
+      console.log(JSON.stringify(v))
+    }, err => {
+      console.log(JSON.stringify(err))
+    })
+    // parray.push(esclient.update(document))
+
+  }
+  /*
+  Promise.all(parray).then(vls => {
+    for( v in vls ){
+      console.log(JSON.stringify(v))
+    }
+    res.send("OK")
+  }, err => {
+    res.send("ERROR")
+  })
+  */
 })
 module.exports = router;

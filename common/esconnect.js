@@ -1,9 +1,14 @@
+/*
 const elasticsearch = require('elasticsearch');
 var esclient = new elasticsearch.Client({
   host : "localhost:9200",
   log : 'trace',
-  apiVersion : '6.8'
+  apiVersion : '7.8'
 })
+*/
+
+const { Client } = require('elasticsearch')
+const esclient = new Client({ node: 'http://localhost:9200', apiVersion: '7.6', log: 'trace' })
 
 esclient.ping({
     // ping usually has a 3000ms timeout
