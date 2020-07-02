@@ -99,6 +99,7 @@ router.get('/getTableData', function(req, res, next) {
     for( c1 of resp.aggregations.cate1.buckets){
       for( c2 of c1.cate2.buckets){
         let el = {}
+        el.cate1 = c1.key
         el.cate2 = c2.key;
         el.count = c2.doc_count;
         console.log(c2)

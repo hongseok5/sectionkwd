@@ -51,7 +51,9 @@
       }
 
       var prtCntLnk = (cell, formatterParams, onRendered) => {
-        return `<a href='http://localhost:3000/keywords?cate2=${cell.getRow().getData().cate2}'> ${cell.getValue()} </a>`;
+        return `<a href='http://localhost:3000/keywords?category1=${cell.getRow().getData().cate1}&category2=${cell.getRow().getData().cate2}'> 
+          ${cell.getValue()} </a>`;
+                  
       }
 
       // table.setData로 처리하는 것도 한 방법일 수도...
@@ -75,7 +77,7 @@
             {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
             {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
             {title : "esID", field : "isNew", hozAlign:"center", visible: false },
-            {title : "대분류", field : "isEdited", hozAlign:"center", visible: false },
+            {title : "대분류", field : "cate1", hozAlign:"center", visible: false },
           ],
           pagination : "local",
           paginationSize : 20,
