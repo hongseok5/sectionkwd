@@ -4,7 +4,10 @@
 
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap-treeview.min.css' />
+    <link rel='stylesheet' href='/stylesheets/jquery-ui.css' />
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-ui.min.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap-treeview.min.js"></script>
     <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
@@ -14,6 +17,7 @@
     <script>
       var category1 = '<%= cate1 %>' || false 
       var category2 = '<%= cate2 %>' || false
+      const ctx = "http://localhost:3000"
       var ajaxURL; 
       var isEmpty = v => {
           if( v == '' || v == undefined || v == null ){
@@ -24,24 +28,44 @@
       }
       // console.log(category1, category2)
       if( isEmpty(category1) && isEmpty(category2) ){
-        ajaxURL = "http://localhost:3000/keywords/getTableData"
+        ajaxURL = ctx + "/keywords/getTableData"
       } else if( isEmpty(category1) && !isEmpty(category2) ){
-        ajaxURL = "http://localhost:3000/keywords/getTableData?category1=" + category1
+        ajaxURL = ctx + "/keywords/getTableData?category1=" + category1
       } else if( !isEmpty(category1) && !isEmpty(category2) ){
-        ajaxURL = "http://localhost:3000/keywords/getTableData?category1=" + category1 + "&category2=" + category2
+        ajaxURL = ctx + "/keywords/getTableData?category1=" + category1 + "&category2=" + category2
       } else {
         console.log("Exception")
-        ajaxURL = "http://localhost:3000/keywords/getTableData"
+        ajaxURL = ctx + "/keywords/getTableData"
       }
       var ctable;
       var cateTree = "<%= JSON.stringify(cateTree) %>".replace(/&#34;/gi,'"') 
+      var btnExample = ( cell, formatterparams, onRendered ) => {
+        return `<button type='button' onclick='showPopup("${cell.getRow().getData().keyword}")'>보기</button>`
+      }
+
+      var showPopup = (keyword) => {
+        $.ajax({
+          url : ctx + "/keywords/getPopupData?keyword=" + keyword,
+          type : "GET",
+          error : function(e){
+            console.log(e)
+          }, 
+          success : function(resp){
+            console.log(resp)
+            for( d of resp){
+              $('<li>' + d + '</li>').appendTo("#keywordHighlight")
+            }
+            $('#exampleModal').modal("show")
+          }
+        })
+      }
 
       var insertData = ( dataArray ) => {
         if( dataArray !== undefined && dataArray.length < 1){
           console.log("No updating data")
         } else {
           $.ajax({
-            url : "http://localhost:3000/category/insertData",
+            url : ctx + "/category/insertData",
             type : "POST",
             data : JSON.stringify(dataArray),
             contentType : "application/json",
@@ -73,8 +97,7 @@
                 category1 = data.text
             }
         } 
-        var url = "http://localhost:3000/keywords/getTableData?"
-
+        var url = ctx + "/keywords/getTableData?"
         if(category1 !== undefined && category2 === undefined){
             ctable.setData(url + "category1=" + category1.substr(0, category1.indexOf(' ('))) 
         } else if(category1 !== undefined && category2 !== undefined){
@@ -87,12 +110,14 @@
       var printChk = (cell, formatterParams, onRendered) => "<input type='checkbox'>"  
       
       var prtCntLnk = (cell, formatterParams, onRendered) => {
-        return `<a href='http://localhost:3000/keywords/getTableData'> ${cell.getValue()} </a>`;
+        return `${ctx}/keywords/getTableData'> ${cell.getValue()} </a>`;
       }
       
       $(document).ready( function(){
         console.log("category2 : " + category2)
-        ctable = new Tabulator("#tb_category2", {
+        ctable = new Tabulator("#tb_keywords", {
+          //columnHeaderAlign:"center",
+          maxHeight: "100%",
           ajaxURL : ajaxURL,
           //ajaxParams : { size : "1" },
           ajaxConfig : "GET",
@@ -103,17 +128,20 @@
             {title : "대분류", width: 100, field : "category1", hozAlign:"center", visible: false },
             {title : "중분류", width: 300, field : "category2", hozAlign:"center", visible: false },
             {title : "키워드", width: 100, field : "keyword", editor: "input", hozAlign:"center", formatterParams : {add : false} },
-            {title : "동의어", width: 300, field : "", editor: "input", hozAlign:"center" },
-            {title : "연관어", width: 300, field : "", editor: "input", hozAlign:"center" },
-            {title : "오류키워드", width: 300, field : "", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "동의어", width: 270, field : "synonym", editor: "input", hozAlign:"center" },
+            {title : "연관어", width: 270, field : "relative", editor: "input", hozAlign:"center" },
+            {title : "오류키워드", width: 300, field : "typo", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "예시", width: 70, formatter: btnExample, hozAlign:"center" },
             {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
             {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
             {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
           ],
 
           pagination : "local",
+          //footerElement:"<button>Custom Button</button>",
+          placeholder:"No Data Available", //display message to user on empty table
           paginationSize : 20,
-          height : "500px",
+          //height : "500px",
           // width : "300px",
           cellEdited : function(cell){
             var rowData = cell.getRow().getData();
@@ -133,11 +161,29 @@
           insertData(udata)  
         });
 
+        document.getElementById("btnSearch").addEventListener("click", function(){
+          var params = {
+            //category1 : null,
+            //category2 : null,
+            synonymYn : $('#synonymYn option:selected').val(),
+            relativeYn : $('#relativeYn option:selected').val(),
+            typoYn :    $('#typoYn option:selected').val(),
+            keyword : $('#searchKwd').val()
+
+          }
+          console.log(ctx + "/" + $.param(params))
+        });
+
+        $('#exampleModal').on('hidden.bs.modal', function (e) {
+          //console.log(e)
+          $("#keywordHighlight > li").remove();
+        })
+        /*
         let ulList = document.querySelectorAll("ul[id^='category2s_'")
         for( ul of ulList ){
           ul.style.visibility='hidden';
         }
-
+        */
         $('#tree').treeview({
             data : cateTree,
             onNodeSelected : function( event, data ){
@@ -145,6 +191,7 @@
             }
         });
         $('#tree').treeview('collapseAll', { silent: true });
+        //$('div.tabulator-col-title').css()  컬럼 헤더 가운데 정렬 직접 구현
 
       });
 
@@ -160,41 +207,69 @@
         <h4 style="margin-top: 30px; margin-bottom: 30px;text-align: center;" > 키워드 목록 </h4>
         <div style="padding: 50px 50px 50px 100px;">
           <form>
-            <input type="text" id="searchKwd"> <button id="btnSearch" type="button">검색</button>
-            <br>
-            <br>
-
-            <label for="synonymYn">동의어존재</label>
-            <select id="synonymYn">
-                <option value="A">전체</option>
-                <option value="Y"> Y </option>
-                <option value="N"> N </option>
-            </select>
-            <label for="relWordYn">연관어존재</label>
-            <select id="relWordYn">
-                <option value="A">전체</option>
-                <option value="Y"> Y </option>
-                <option value="N"> N </option>
-            </select>
-            <label for="typoYn">오류어존재</label>
-            <select id="typoYn">
-                <option value="A">전체</option>
-                <option value="Y"> Y </option>
-                <option value="N"> N </option>
-            </select>
-
+            
+            <div style="margin:30px;">
+              <span style="margin:20px">
+              <label for="synonymYn">동의어존재</label>
+              <select id="synonymYn">
+                  <option value="A">전체</option>
+                  <option value="Y"> Y </option>
+                  <option value="N"> N </option>
+              </select>
+              </span>
+              <span style="margin:20px">
+              <label for="relativeYn">연관어존재</label>
+              <select id="relativeYn">
+                  <option value="A">전체</option>
+                  <option value="Y"> Y </option>
+                  <option value="N"> N </option>
+              </select>
+              </span>
+              <span style="margin:20px">
+              <label for="typoYn">오류어존재</label>
+              <select id="typoYn">
+                  <option value="A">전체</option>
+                  <option value="Y"> Y </option>
+                  <option value="N"> N </option>
+              </select>
+              </span>
+            </div>
+            <input type="text" id="searchKwd"> 
+            <button id="btnSearch" type="button">검색</button>
           </form>
         </div>
 
         <h4>
           <button id="updt-data"> 저장 </button>
           <button id="add-row"> 추가 </button>
+          <button id="test-btn"> 테스트 </button>
         </h4>
-        <div id="tb_category2">
+        <div id="tb_keywords">
           <!-- 타뷸레이터 테이블 생성 -->
         </div>
       </div>
-      <div class="col-md-2"></div>
+      <div class="col-md-2">
+        <div class="modal" tabindex="-1" role="dialog" id="exampleModal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"> 키워드 사례</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <ul id="keywordHighlight"></ul>
+              </div>
+              <!--
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+              -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </body>

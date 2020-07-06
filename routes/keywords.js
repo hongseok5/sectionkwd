@@ -1,14 +1,12 @@
 var express = require('express');
 var router = express.Router();
 var esclient = require('../common/esconnect');
-const { query } = require('express');
-const e = require('express');
 const index = "skt_dictionary"
 const util = require('../common/util');
 
 router.get('/', function(req, res, next) {
   console.log("keywords")
-  // 카테고리 페이지에서 클릭으로 들어왔을때 cate2 파라미터
+  // 테이블을 제외하고 좌측에 카테고리 트리만 그려줌. 
   let cate1 = req.query.category1;
   let cate2 = req.query.category2;
   let query; 
@@ -59,53 +57,51 @@ router.get('/', function(req, res, next) {
   })
 });
 
-// 키워드페이지에서 검색으로 요청할 때 
-/*
-router.post('/getTableData', function(req, res, next) {
-  console.log(typeof req.query)
-  let query;
-  let size = req.query.size || 20;
-  if( req.query.cate2 !== undefined){
-    query = {
-      term : {
-        "category2.keyword" : req.query.cate2
-      }
-    }
-  } else {
-    query = { match_all : {}}
-  }
-
-  let body = {
-    size : 1000, 
-    query : query
-  }
-  let keywords = []
-  esclient.search({ index, body }).then( resp => {
-    for( h of resp.hits.hits){
-      keywords.push( h._source )
-    }
-    res.status(200).send(keywords);
-  }, err => {
-    console.log(JSON.stringify(err))
-  })  
-})
-*/
 // 카테고리페이지에서 키워드 수 컬럼 클릭으로 들어올 때 또는 키워드 페이지 트리 클릭일때 
 router.get('/getTableData', function(req, res, next) {
   console.log("keywords : " + req.query.category1 + "|" + req.query.category2)
   let query;
-  console.log(util.isEmpty(req.query.category1) + " " + util.isEmpty(req.query.category2))
+  let must = []
+  let must_not = []
+  // let filter = []
+  must_not = util.checkSelectVal( req.query.synonymYn, "synonym", must_not)
+  must_not = util.checkSelectVal( req.query.typoYn, "antonym", must_not) // 필드명 바꾸기
+  must_not = util.checkSelectVal( req.query.relativeYn, "relative_words1" ,must_not) 
+
+  if(req.query.keyword !== undefined){
+    let qs = {
+      query_string : {
+        fields : ["category2", "keyword"],
+        query : req.query.keyword
+      }
+    }
+    must.push(qs)    
+  }
+
   if( util.isEmpty(req.query.category1)  && util.isEmpty(req.query.category2)){
-    query = { match_all : {}}
+    query = {
+      bool : {
+        must_not,
+        must
+      }
+    }
   } else if( !util.isEmpty(req.query.category1) && util.isEmpty(req.query.category2) ){
     query = {
-      term : {
-        category1 : req.query.category1
+      bool : {
+        must_not,
+        must,
+        filter : [
+          { term : {
+            category1 : req.query.category1
+          }}
+        ]
       }
     }
   } else if( !util.isEmpty(req.query.category1) && !util.isEmpty(req.query.category2)){
     query = {
       bool : {
+        must_not,
+        must,
         filter : [
           { term : {
             category1 : req.query.category1
@@ -119,7 +115,7 @@ router.get('/getTableData', function(req, res, next) {
   } else {
     console.log("Exception!")
   }
-  console.log("Debug")
+
   let body = {
     query : query,
     size : 10000
@@ -151,6 +147,43 @@ router.get('/getTableData', function(req, res, next) {
   }, err => {
     console.log("Error")
     console.log(err)
+  })
+})
+
+router.get("/getPopupData", function(req, res, next){
+  console.log("/getPopupData")
+
+  let body = {
+    query : {
+      query_string : {
+        fields : ["edt_txt_01", "edt_txt_02"],
+        query : req.query.keyword
+      }
+    },
+    highlight : {
+      fields : {
+        edt_txt_01 : { type : "plain"},
+        edt_txt_02 : { type : "plain"}
+      }
+    },
+    size : 5
+  }
+  esclient.search({index : "dm_section", body}).then( resp => {
+    if(resp.error === undefined){
+      let data = []
+      for( h of resp.hits.hits){
+        var text;
+        if( h.highlight.edt_txt_01 !== undefined || h.highlight.edt_txt_02 !== undefined){
+          text = ( h.highlight.edt_txt_01 || "" ) + ( h.highlight.edt_txt_02 || "" )
+          data.push(text)
+        }                        
+      }
+      res.status(200).send( data );
+    } else {
+      res.send(500).send( resp );
+    }
+  }, error => {
+    console.log(JSON.stringify(error))
   })
 })
 

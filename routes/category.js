@@ -117,6 +117,13 @@ router.get('/getTableData', function(req, res, next) {
 router.post('/insertData', function(req, res, next) { 
   console.log("insertData")
   var parray = []
+  let insertDocs = req.body.filter( v => {
+    return v.isNew == "Y"
+  })
+
+  let updateDocs = req.body.filter( v => {
+    return v.isEdited == "Y"
+  })
   for( d of req.body){
     console.log(d)
     var document = {
@@ -124,7 +131,7 @@ router.post('/insertData', function(req, res, next) {
       type : "_doc",
       // id : null,
       body : {
-        doc : {
+        _doc : {
           category2 : d.cate2,
           category1 : "테스트",
           keyword : d.cate2          
