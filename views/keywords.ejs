@@ -5,6 +5,7 @@
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap-treeview.min.css' />
     <link rel='stylesheet' href='/stylesheets/jquery-ui.css' />
+    <script type="text/javascript" src="/javascripts/xlsx.full.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-ui.min.js"></script>
@@ -15,6 +16,7 @@
 
     </style>
     <script>
+      // 카테고리 페이지에서 넘어왔을때
       var category1 = '<%= cate1 %>' || false 
       var category2 = '<%= cate2 %>' || false
       const ctx = "http://localhost:3000"
@@ -26,7 +28,7 @@
               return false
           }
       }
-      // console.log(category1, category2)
+      // GET으로 파라미터 전달
       if( isEmpty(category1) && isEmpty(category2) ){
         ajaxURL = ctx + "/keywords/getTableData"
       } else if( isEmpty(category1) && !isEmpty(category2) ){
@@ -37,12 +39,17 @@
         console.log("Exception")
         ajaxURL = ctx + "/keywords/getTableData"
       }
+      // 테이블 객체 선언
       var ctable;
+      // 카테고리 트리 데이터
       var cateTree = "<%= JSON.stringify(cateTree) %>".replace(/&#34;/gi,'"') 
+      // 테이블의 [보기] 버튼 렌더링 함수
       var btnExample = ( cell, formatterparams, onRendered ) => {
         return `<button type='button' onclick='showPopup("${cell.getRow().getData().keyword}")'>보기</button>`
       }
-
+      // 테이블의 체크박스 렌더링 함수
+      var printChk = (cell, formatterParams, onRendered) => "<input type='checkbox'>" 
+      // 보기 버튼 클릭시 데이터 조회 후 팝업 호출
       var showPopup = (keyword) => {
         $.ajax({
           url : ctx + "/keywords/getPopupData?keyword=" + keyword,
@@ -52,14 +59,18 @@
           }, 
           success : function(resp){
             console.log(resp)
-            for( d of resp){
-              $('<li>' + d + '</li>').appendTo("#keywordHighlight")
+            if(resp.length > 0){
+              for( d of resp){
+                $('<li>' + d + '</li>').appendTo("#keywordHighlight")
+              }
+            } else {
+              $('<li> 키워드 예시가 없습니다. </li>').appendTo("#keywordHighlight")
             }
             $('#exampleModal').modal("show")
           }
         })
       }
-
+      // 저장 버튼 클릭시 신규/수정 데이터만 필터링 하여 서버에 요청 
       var insertData = ( dataArray ) => {
         if( dataArray !== undefined && dataArray.length < 1){
           console.log("No updating data")
@@ -83,7 +94,7 @@
           })
         }
       }
-
+      // 카테고리 트리의 카테고리 선택시 데이터 조회하는 함수
       var loadData = (data) => {
         var category1;
         var category2;
@@ -99,22 +110,18 @@
         } 
         var url = ctx + "/keywords/getTableData?"
         if(category1 !== undefined && category2 === undefined){
-            ctable.setData(url + "category1=" + category1.substr(0, category1.indexOf(' ('))) 
+          // 카테고리 트리의 카운트 값을 잘라내고 전달
+          ctable.setData(url + "category1=" + category1.substr(0, category1.indexOf(' ('))) 
         } else if(category1 !== undefined && category2 !== undefined){
-            ctable.setData(url + "category1=" + category1.substr(0, category1.indexOf(' (')) + "&category2=" + category2.substr(0, category2.indexOf(' ('))) 
+          ctable.setData(url + "category1=" + category1.substr(0, category1.indexOf(' (')) + "&category2=" + category2.substr(0, category2.indexOf(' ('))) 
         } else {
-            ctable.setData() 
+          ctable.setData() 
         }
       }
 
-      var printChk = (cell, formatterParams, onRendered) => "<input type='checkbox'>"  
-      
-      var prtCntLnk = (cell, formatterParams, onRendered) => {
-        return `${ctx}/keywords/getTableData'> ${cell.getValue()} </a>`;
-      }
-      
       $(document).ready( function(){
-        console.log("category2 : " + category2)
+
+        // 테이블 생성
         ctable = new Tabulator("#tb_keywords", {
           //columnHeaderAlign:"center",
           maxHeight: "100%",
@@ -129,8 +136,8 @@
             {title : "중분류", width: 300, field : "category2", hozAlign:"center", visible: false },
             {title : "키워드", width: 100, field : "keyword", editor: "input", hozAlign:"center", formatterParams : {add : false} },
             {title : "동의어", width: 270, field : "synonym", editor: "input", hozAlign:"center" },
-            {title : "연관어", width: 270, field : "relative", editor: "input", hozAlign:"center" },
-            {title : "오류키워드", width: 300, field : "typo", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "연관어", width: 270, field : "relative_words1", editor: "input", hozAlign:"center" },
+            {title : "오류키워드", width: 300, field : "antonym", editor: "input", hozAlign:"center", formatterParams : {add : false} },
             {title : "예시", width: 70, formatter: btnExample, hozAlign:"center" },
             {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
             {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
@@ -151,45 +158,55 @@
           }
         })
 
+        // 행 추가 이벤트
         document.getElementById("add-row").addEventListener("click", function(){
           ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
         });
 
+        // 저장버튼 클릭 이벤트 
         document.getElementById("updt-data").addEventListener("click", function(){
           var data = ctable.getData();
           var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)                                                                                                                                  
           insertData(udata)  
         });
 
-        document.getElementById("btnSearch").addEventListener("click", function(){
-          var params = {
-            //category1 : null,
-            //category2 : null,
-            synonymYn : $('#synonymYn option:selected').val(),
-            relativeYn : $('#relativeYn option:selected').val(),
-            typoYn :    $('#typoYn option:selected').val(),
-            keyword : $('#searchKwd').val()
-
-          }
-          console.log(ctx + "/" + $.param(params))
+        // 엑셀 다운로드 버튼 클릭 이벤트
+        document.getElementById("test-btn").addEventListener("click", function(){
+          ctable.download('xlsx', 'data.xlsx', {sheetName:"data"});
         });
 
+        // 검색 버튼 클릭 이벤트
+        document.getElementById("btnSearch").addEventListener("click", function(){
+          var params = {
+            //category1 ,
+            //category2 ,
+            synonym : $('#synonymYn option:selected').val(),
+            relative : $('#relativeYn option:selected').val(),
+            typo :    $('#typoYn option:selected').val()
+          }
+
+          if($("#searchKwd").val() !== "" ){
+            params.keyword = $("#searchKwd").val()
+          }
+          ajaxURL = `${ctx}/keywords/getTableData?${$.param(params)}`
+          ctable.setData(ajaxURL)
+        });
+
+        // 팝업 닫을 때 이벤트 버튼
         $('#exampleModal').on('hidden.bs.modal', function (e) {
           //console.log(e)
           $("#keywordHighlight > li").remove();
         })
-        /*
-        let ulList = document.querySelectorAll("ul[id^='category2s_'")
-        for( ul of ulList ){
-          ul.style.visibility='hidden';
-        }
-        */
+
+        // 카테고리 트리 그리는 함수
         $('#tree').treeview({
             data : cateTree,
             onNodeSelected : function( event, data ){
-                loadData(data)
+              loadData(data)
             }
         });
+
+        // 트리를 그리고 나서 중분류는 감추는 함수.
         $('#tree').treeview('collapseAll', { silent: true });
         //$('div.tabulator-col-title').css()  컬럼 헤더 가운데 정렬 직접 구현
 
@@ -242,7 +259,8 @@
         <h4>
           <button id="updt-data"> 저장 </button>
           <button id="add-row"> 추가 </button>
-          <button id="test-btn"> 테스트 </button>
+          <button id="test-btn"> 엑셀다운로드 </button>
+          <button id="test-btn"> 엑셀업로드 </button>
         </h4>
         <div id="tb_keywords">
           <!-- 타뷸레이터 테이블 생성 -->

@@ -64,10 +64,11 @@ router.get('/getTableData', function(req, res, next) {
   let must = []
   let must_not = []
   // let filter = []
-  must_not = util.checkSelectVal( req.query.synonymYn, "synonym", must_not)
-  must_not = util.checkSelectVal( req.query.typoYn, "antonym", must_not) // 필드명 바꾸기
-  must_not = util.checkSelectVal( req.query.relativeYn, "relative_words1" ,must_not) 
-
+  // console.log(util.checkSelectVal( req.query.synonymYn, "synonym", must_not))
+  must_not = util.checkSelectVal( req.query.synonym, "synonym", must_not)
+  must_not = util.checkSelectVal( req.query.typo, "typo", must_not) // 필드명 바꾸기
+  must_not = util.checkSelectVal( req.query.relative, "relative" ,must_not) 
+  console.log(JSON.stringify(must_not))
   if(req.query.keyword !== undefined){
     let qs = {
       query_string : {
@@ -130,14 +131,9 @@ router.get('/getTableData', function(req, res, next) {
         let el = {}
         el = h._source
         el.id = h.id
-        /*
-        el.id = h._id
-        el.category1 = h._source.category1
-        el.category2 = h._source.category2
-        el.keywords = h._source.
-        */
         keywords.push(el)
       }
+      console.log(JSON.stringify(keywords))
       res.status(200).send( keywords );
     } else {
       console.log("Error")

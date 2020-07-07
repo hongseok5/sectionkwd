@@ -9,18 +9,32 @@ let util = {
         }
     },
     checkSelectVal : (v, fname ,a) => {
-        if(Array.isArray(a) && v !== undefined ){
+        console.log(fname)
+        if(Array.isArray(a) ){
             if(v === "A"){
                 // 전체일 경우 들어온 array에 아무것도 넣지 않고 리턴
                 return a
             } else if(v === "Y"){
-                // 값이 있는 필드만 조회하려고 할 경우
-                let obj = { term : {fname : "" }}                
-                return a.push(obj)
+                let obj;
+                if(fname === "synonym"){
+                    obj = { term : { "synonym.keyword" : "" }}    
+                } else if(fname === "typo"){
+                    obj = { term : { "antonym.keyword" : "" }} 
+                } else if(fname === "relative") {
+                    obj = { term : { "relative_words1.keyword" : "" }}
+                } else {
+                    console.log("Exception!!")
+                    //let obj = { term : { "synonym.keyword" : "" }}  
+                    //a.push(obj)
+                    return a  
+                }              
+                a.push(obj)           
+                return a
             } else if(v === "N"){
                 // 동의어가 존재 하지 않는 필드의 경우 - must not 에 넣는다. 수집시에 없는 건 
-                let obj = { exists : {field : fname }}  
-                return a.push(obj)    
+                let obj = { exists : { field : fname + ".keyword" }}  
+                a.push(obj)    
+                return a
             } else {
                 // 예외처리
                 console.log("Function checkSelect Vale Exception1!")
