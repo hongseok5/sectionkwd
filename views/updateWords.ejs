@@ -1,11 +1,155 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
+    <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/javascripts/xlsx.full.min.js"></script>
+    <script>
+      var ctable;
+      const ctx = "http://localhost:3000";
+      var from = 15;
+      var isEnd = false;
+
+      var render = ( d ) => {
+        html = `<tr> <td><input type="checkbox"> </td>
+                     <td>${d.ckeyword}</td> 
+                     <td>${d.first_ext_date}</td>
+                     <td>${d.last_ext_date}</td>
+                     <td>${d.ext_count}</td>
+                     <td> <button class="btn btn-primary register"> 등록</button> 
+                          <button class="btn btn-default exclude">제외</button> </td> 
+                </tr>`
+
+        //$("#tableBody:").append(html);
+        $(html).appendTo("#tableBody")
+      }
+
+      var fetchList = function(){
+        if(isEnd) return;
+        console.log("from no is " + from)
+        $.ajax({
+          url : `${ctx}/updateWords/getTableData?from=${from}`,
+          type : "GET",
+          error : err => console.log(err),
+          success : (resp) => {
+            if(resp.result != "sucess"){
+
+            }
+            if(resp.data.length < 10 ){
+              isEnd = true;
+              // 더 이상 키워드가 없습니다 띄우기
+              render(d)
+              alert("더이상 텍스트가 없습니다.")
+            }
+            $.each( resp.data, (index, d) => {
+              console.log(d)
+              render(d)
+            })
+          }
+        })
+        from += 15;
+      }
+  
+      $(document).ready( function(){
+        /*
+        ctable = new Tabulator('#tb_ckeywords', {
+          ajaxURL : '',
+          ajaxConfig : "GET",
+          columns : [
+
+          ]
+        })
+        */
+        $(window).scroll( function(){
+          var $window = $(this);
+          var scrollTop = $window.scrollTop();
+          var windowHeight = $window.height();
+          var documentHeight = $(document).height();
+          if( scrollTop + windowHeight + 30 > documentHeight ){
+            console.log("fetch")
+            fetchList()
+          } else {
+            console.log("scrollTop : " + scrollTop)
+            console.log("windowHeight : " + windowHeight)
+            console.log("documentHeight : " + documentHeight)
+            console.log("Test2")
+          }
+        });
+
+                // 저장버튼 클릭 이벤트 
+        document.getElementById("btnSearch").addEventListener("click", function(){
+          console.log("search")
+          $.ajax({
+            url : `${ctx}/updateWords/registerDict`,
+            type : "POST",
+            //contentType : "application/json",
+            error : e => console.log(e),
+            success : (resp) => {
+              console.log(resp)
+            },
+            data : { ckeyword : $('#srchKeyword').val() }
+          })
+
+        });
+      })
+    </script>
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+    <div class="row">
+      <div class="col-md-2">
+        <h4 style="margin-top: 30px;"> 후보키워드 </h4>
+      </div>
+      <div class="col-md-8">
+        <p style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >키워드목록</p>
+          <div>
+            <form>
+              <label>기간</label>
+              <input type="date"> <input type="date">
+              <label>발생횟수</label>
+              <input type="number">
+              <div style="margin:10px">
+                <input type="text" placeholder="검색어" id="srchKeyword"> 
+                <button id="btnSearch" type="button">검색</button>
+              </div>
+            </form>
+          </div>
+        <div id="tb_ckeywords" style="margin-top:30px">
+          <table class='table'>
+            <thead>
+              <tr>
+                <th> 
+                  <input type="checkbox" class="check_header">
+                </th> 
+                <th> 키워드 </th> 
+                <th> 최초발생일 </th> 
+                <th> 최종발생일 </th> 
+                <th> 발생횟수 </th> 
+                <th> 편집 </th>  
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+            <% for (let i = 0; i < keywords.length; i++){ %>
+              <tr>
+                <td> <input type="checkbox"> </td>
+                <td> <%= keywords[i].ckeyword %> </td>
+                <td> <%= keywords[i].first_ext_date %> </td>
+                <td> <%= keywords[i].last_ext_date %> </td>
+                <td> <%= keywords[i].ext_count %> </td>
+                <td id='<%= keywords[i].id %>'> 
+                  <button class="btn btn-primary register"> 등록</button> 
+                  <button class="btn btn-default exclude">제외</button> 
+                </td>
+              </tr>  
+            <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-2"></div>
+    </div>
   </body>
 </html>

@@ -9,7 +9,6 @@ router.get('/', function(req, res, next) {
   // 테이블을 제외하고 좌측에 카테고리 트리만 그려줌. 
   let cate1 = req.query.category1;
   let cate2 = req.query.category2;
-  let query; 
   let body = {
     query : {
       match_all : { }
@@ -47,6 +46,7 @@ router.get('/', function(req, res, next) {
           //el2.text = c2.key
           el1.nodes.push(el2)
         }
+        console.log(el1)
         cateTree.push(el1)
       }
       res.render("keywords", { cateTree , cate2, cate1 })
@@ -104,7 +104,7 @@ router.get('/getTableData', function(req, res, next) {
         must_not,
         must,
         filter : [
-          { term : {
+          { term :                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   {
             category1 : req.query.category1
           }},
           { term : {
@@ -130,10 +130,11 @@ router.get('/getTableData', function(req, res, next) {
       for( h of resp.hits.hits){
         let el = {}
         el = h._source
-        el.id = h.id
+        el.id = h._id
         keywords.push(el)
+        //console.log(el)
       }
-      console.log(JSON.stringify(keywords))
+      // console.log(JSON.stringify(keywords))
       res.status(200).send( keywords );
     } else {
       console.log("Error")

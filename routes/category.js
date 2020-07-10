@@ -31,18 +31,16 @@ router.get('/', function(req, res, next) {
   }
 
   esclient.search({ index , body }).then(function(resp){
-    let data1 = {}
-    data1.cate1s = []
+    let cateTree = []
 
     for( c1 of resp.aggregations.cate1.buckets){
       // console.log(b)
       let el = {}
-      el.count = c1.doc_count
-      el.category1 = c1.key;
-      data1.cate1s.push(el)
+      el.text = `${c1.key} (${c1.doc_count})`;
+      cateTree.push(el)
     }
 
-    res.render("category", { data1 })
+    res.render("category", { cateTree })
   }, function(err){
     console.log(err);
     res.render("category", { message : "error"})
@@ -130,27 +128,22 @@ router.post('/insertData', function(req, res, next) {
       index : index,
       type : "_doc",
       // id : null,
-      body : {
-        _doc : {
-          category2 : d.cate2,
-          category1 : "테스트",
-          keyword : d.cate2          
-        }
+      body : {    
+        category2 : d.cate2,
+        category1 : d.cate1,
+        keyword : d.cate2          
         // doc_as_upsert : true
       }
     }
-    /*
+    
     esclient.index(document).then(v => {
       console.log(JSON.stringify(v))
+      res.send("OK")
     }, err => {
       console.log(JSON.stringify(err))
-    })
-    */
-    if(true){
-      res.send("OK")
-    } else {
       res.send("ERR")
-    }
+    })
+  
     // parray.push(esclient.update(document))
 
   }

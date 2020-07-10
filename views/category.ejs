@@ -2,21 +2,23 @@
 <html>
   <head>
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
+    <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap-treeview.min.css' />
+    <!--
+    <link rel='stylesheet' href='/stylesheets/jquery-ui.css' />
+    <script type="text/javascript" src="/jQuery-3.3.1/jquery-ui.min.js"></script>
+    -->
+    <link rel='stylesheet' href='/stylesheets/tabulator_bootstrap.min.css' />
+    <script type="text/javascript" src="/javascripts/tabulator.min.js"></script>
+    <script type="text/javascript" src="/javascripts/xlsx.full.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
-    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
+    <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    
+    <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap-treeview.min.js"></script>
 
     <script>
-      /*
-      var printButton = (cell, formatterParams, onRendered) => {
-        if(formatterParams.add){
-          return "<button>취소</button>"
-        } else {
-          return "<button>삭제</button>"
-        }
-      }
-      */
+
       var ctable;
+      var cateTree = "<%= JSON.stringify(cateTree) %>".replace(/&#34;/gi,'"')
       var insertData = ( dataArray ) => {
         if( dataArray !== undefined && dataArray.length < 1){
           console.log("No updating data")
@@ -42,6 +44,7 @@
       }
 
       var loadData = (cate1) => {
+        console.log(cate1)
         var url = "http://localhost:3000/category/getTableData?cate1="
         ctable.setData(url + cate1)
       }
@@ -99,12 +102,62 @@
 
         document.getElementById("updt-data").addEventListener("click", function(){
           var data = ctable.getData();
-          console.log(data)
+          var cate1 = $('.list-group > li[class*=node-selected]')[0]
           var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)  
-          console.log(udata)                                                                                                                                   
+          if(cate1 === undefined){
+            alert("대분류를 선택하세요")
+          } else {
+            for( d of udata){
+              d.cate1 = cate1.innerText.substr(0, cate1.innerText.indexOf(' ('))
+            }
+          }
+          console.log(cate1.innerText)                                                                                                                                   
           insertData(udata)  
 
         });
+
+        document.getElementById("addCategory1").addEventListener("click", function(){
+          // 이거는 하나씩만 입력하도록 검사해야함 
+          console.log(  )
+          if( $('#cate1wrapper')[0] !== undefined ){
+            return
+          } else {
+            // 대분류 추가버튼 + 클릭시 이벤트
+            // console.log("대분류추가")
+            // var newEl = $(".list-group > li:nth-child(1)")
+            // var buttonSave = '<button id="saveCate1">저장</button>' 버튼 없이 엔터로만 입력
+            var input = '<input type="text" id="newCate1"><button id="cancelCate1">x</button>'
+            $( `<li class="list-group-item node-tree" id="cate1wrapper">${input}</li>`).prependTo(".list-group")
+            document.getElementById("newCate1").addEventListener("keydown", function(key){
+              if(key.code == "Enter"){
+                console.log("save")
+                var value = $('#newCate1').val()
+                if(value !== '' && value !== undefined){
+                  var data = [{ cate1 : value, cate2 : value, keyword : value, isNew : "Y" }]
+                  console.log(data)
+                } else {
+                  alert('입력값이 유효하지 않습니다.')
+                }
+              }
+            })
+            document.getElementById("cancelCate1").addEventListener("click", function(){
+              $('#cate1wrapper').remove();
+            })
+          }
+
+        });
+        
+        $('#tree').treeview({
+            data : cateTree,
+            onNodeSelected : function( event, data ){
+              
+              loadData(data.text.substr(0, data.text.indexOf(' (')))
+            }
+        });
+
+
+
+
       });
 
     </script>
@@ -112,17 +165,11 @@
   <body>
     <div class="row">
       <div class="col-md-2">
-        <h4 style="margin-top: 30px;"> 대분류 </h4>
-        <ul style="margin-top: 30px;">
-      
-          <% for(let i = 0; i < data1.cate1s.length; i++){ %>
-            <li>
-              <a href="#" onclick="loadData('<%= data1.cate1s[i].category1 %>')">
-                <%= data1.cate1s[i].category1 %> ( <%= data1.cate1s[i].count %> )
-              </a>              
-            </li>
-          <% } %>
-        </ul>
+        <span>
+          <h4 style="margin-top: 30px;"> 대분류 <button class="btn btn-warning btn-xs" id="addCategory1">+</button></h4>
+          
+        </span>
+        <div id="tree"></div>
       </div>
       <div class="col-md-8">
         <h4 style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >카테고리 목록</h4>

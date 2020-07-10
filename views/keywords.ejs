@@ -5,13 +5,13 @@
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap-treeview.min.css' />
     <link rel='stylesheet' href='/stylesheets/jquery-ui.css' />
+    <link rel='stylesheet' href='/stylesheets/tabulator_bootstrap.min.css' />
+    <script type="text/javascript" src="/javascripts/tabulator.min.js"></script>
     <script type="text/javascript" src="/javascripts/xlsx.full.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-ui.min.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap-treeview.min.js"></script>
-    <link href="https://unpkg.com/tabulator-tables@4.7.1/dist/css/tabulator.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.7.1/dist/js/tabulator.min.js"></script>
     <style>
 
     </style>
@@ -134,11 +134,12 @@
             {title : "esID", field : "isNew", hozAlign:"center", visible: false },
             {title : "대분류", width: 100, field : "category1", hozAlign:"center", visible: false },
             {title : "중분류", width: 300, field : "category2", hozAlign:"center", visible: false },
-            {title : "키워드", width: 100, field : "keyword", editor: "input", hozAlign:"center", formatterParams : {add : false} },
-            {title : "동의어", width: 270, field : "synonym", editor: "input", hozAlign:"center" },
-            {title : "연관어", width: 270, field : "relative_words1", editor: "input", hozAlign:"center" },
-            {title : "오류키워드", width: 300, field : "antonym", editor: "input", hozAlign:"center", formatterParams : {add : false} },
-            {title : "예시", width: 70, formatter: btnExample, hozAlign:"center" },
+            {title : "키워드", width: 120, field : "keyword", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            {title : "동의어", width: 220, field : "synonym", editor: "input", hozAlign:"center" },
+            {title : "연관어1", width: 220, field : "relative_words1", editor: "input", hozAlign:"center" },
+            {title : "연관어2", width: 220, field : "relative_words1", editor: "input", hozAlign:"center" },
+            {title : "오류키워드", width: 220, field : "antonym", editor: "input", hozAlign:"center", formatterParams : {add : false} },
+            //{title : "예시", width: 70, formatter: btnExample, hozAlign:"center" },
             {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
             {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
             {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
@@ -224,6 +225,24 @@
         <h4 style="margin-top: 30px; margin-bottom: 30px;text-align: center;" > 키워드 목록 </h4>
         <div style="padding: 50px 50px 50px 100px;">
           <form>
+            <div style="margin:30px;">
+              <span style="margin:20px">
+              <label for="">대분류</label>
+              <select id="">
+                  <option value="A">전체</option>
+                  <option value="Y"> Y </option>
+                  <option value="N"> N </option>
+              </select>
+              </span>
+              <span style="margin:20px">
+              <label for="">중분류</label>
+              <select id="">
+                  <option value="A">전체</option>
+                  <option value="Y"> Y </option>
+                  <option value="N"> N </option>
+              </select>
+              </span>
+            </div>
             
             <div style="margin:30px;">
               <span style="margin:20px">
@@ -262,7 +281,7 @@
           <button id="test-btn"> 엑셀다운로드 </button>
           <button id="test-btn"> 엑셀업로드 </button>
         </h4>
-        <div id="tb_keywords">
+        <div id="tb_keywords" class="table-bordered">
           <!-- 타뷸레이터 테이블 생성 -->
         </div>
       </div>

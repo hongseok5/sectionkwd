@@ -23,5 +23,7 @@ esclient.ping({
     }
 });
 
+// 여기서 매핑정보도 가져오자
+
 module.exports = esclient;
 
