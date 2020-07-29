@@ -3,23 +3,65 @@
   <head>
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap.css' />
     <link rel='stylesheet' href='/Bootstrap-3.3.7/css/bootstrap-treeview.min.css' />
+    <script type="text/javascript" src="/javascripts/commonUtil.js"></script>
     <!--
+    <link rel='stylesheet' href='/stylesheets/main.css' />
     <link rel='stylesheet' href='/stylesheets/jquery-ui.css' />
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-ui.min.js"></script>
     -->
+
     <link rel='stylesheet' href='/stylesheets/tabulator_bootstrap.min.css' />
     <script type="text/javascript" src="/javascripts/tabulator.min.js"></script>
     <script type="text/javascript" src="/javascripts/xlsx.full.min.js"></script>
     <script type="text/javascript" src="/jQuery-3.3.1/jquery-3.3.1.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap.min.js"></script>
-    
+    <script type="text/javascript" src="/javascripts/commonUtil.js"></script>
     <script type="text/javascript" src="/Bootstrap-3.3.7/js/bootstrap-treeview.min.js"></script>
 
     <script>
 
-      var ctable;
-      var cateTree = "<%= JSON.stringify(cateTree) %>".replace(/&#34;/gi,'"')
-      var insertData = ( dataArray ) => {
+      var ctable2;
+      var ctable1;
+
+      var tb1ViewMode = true  // 대분류 카테고리 테이블의 편집/뷰 모드 플래그 
+      var ajaxURL1;
+      var ajaxURL2;
+
+      function changeMode1(){
+        // 대분류 편집/뷰 모드 변환 함수
+
+        if( ctable1.getColumnDefinitions()[0].editor === undefined || ctable1.getColumnDefinitions()[0].editor == null){
+          ctable1.updateColumnDefinition("cate1", {editor: "input"})
+          tb1ViewMode = false
+          $("#editCategory1").text("저장");
+          $("#cancelCategory1").show();
+          $("#addCategory1").show()
+        } else {
+          ctable1.updateColumnDefinition("cate1", {editor: null })
+          tb1ViewMode = true
+          $("#editCategory1").text("편집");
+          $("#cancelCategory1").hide();
+          $("#addCategory1").hide()
+        }
+      }  
+
+      var insertData = ( category , dataArray ) => {
+        
+        if(category === 1){
+          for(i of dataArray){
+            i.cate2 = i.cate1
+            i.keyword = i.cate1
+          }
+        } else {
+          for(i of dataArray){
+
+            i.keyword = i.cate2
+            if(i.isNew === "Y"){
+              // 중분류를 추가하는데 대분류가 미정인 경우
+            }
+          }
+        }
+
         if( dataArray !== undefined && dataArray.length < 1){
           console.log("No updating data")
         } else {
@@ -28,13 +70,12 @@
             type : "POST",
             data : JSON.stringify(dataArray),
             contentType : "application/json",
-            // dataType : "text",
             error : function(e){
               console.log(e)
             },
             success : function( response ){
               if(response == "OK"){
-                ctable.setData();
+                ctable2.setData();
               } else {
                 alert("not successful")
               }
@@ -43,149 +84,219 @@
         }
       }
 
-      var loadData = (cate1) => {
-        console.log(cate1)
-        var url = "http://localhost:3000/category/getTableData?cate1="
-        ctable.setData(url + cate1)
+      var loadData = (cate1, isClick, keyword) => {
+        var url = "http://localhost:3000/category/getTableData?";
+        if(isClick){
+          url = `${url}cate1=${cate1}`
+        } else {
+          url = `${url}cate1=${cate1}&keyword=${keyword}`
+        }        
+        ctable2.setData(url)
       }
 
       var printChk = (cell, formatterParams, onRendered) => {
         return "<input type='checkbox'>"        
       }
 
-      var prtCntLnk = (cell, formatterParams, onRendered) => {
-        return `<a href='http://localhost:3000/keywords?category1=${cell.getRow().getData().cate1}&category2=${cell.getRow().getData().cate2}'> 
-          ${cell.getValue()} </a>`;
-                  
+      var deleteBtn = (cell, formatterParams, onRendered) => {
+        return "<button class='btn btn-danger btn-xs'> x </button>"        
       }
 
-      // table.setData로 처리하는 것도 한 방법일 수도...
-      // table.setData(URL) 이런식으로 아쟉스 요청 가능
-      // table.setData() 이러면 리로드 됨.
+      var prtCntLnk = (cell, formatterParams, onRendered) => {
+        // 키워드 수 컬럼 값 입력시 키워드 화면으로 이동 
+        return `<a href='http://localhost:3000/keywords?category1=${cell.getRow().getData().cate1}&category2=${cell.getRow().getData().cate2}'> 
+          ${cell.getValue()} </a>`;
+      }
       
       $(document).ready( function(){
 
-        ctable = new Tabulator("#tb_category2", {
+        ctable1 = new Tabulator("#tb_category1",{
+
+          layout : "fitDataFill",
+          ajaxURL : "http://localhost:3000/category/getCategoryData",
+          ajaxConfig : "GET",
+          selectable:1,
+          //selectable : true,
+          columns : [
+            {title : "대분류  ", 
+             field : "cate1", hozAlign:"left", headerSort:false,  width: 200 },
+            {title : "대분류초기값", field : "initValue1", hozAlign:"center", visible: false },
+            {title : "중분류초기값", field : "initValue2", hozAlign:"center", visible: false },
+            {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
+            {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false }
+          ],
+          
+          rowClick: function(e, row){
+            if(tb1ViewMode){
+              // 카테고리 2 데이터 로드
+              //var el = row.getElement()
+              //el.style.color = 'orange'
+              console.log(e)
+              console.log(row)
+              if(row.getData().cate1 !== '' && row.getData().cate1 !== undefined){
+                loadData( row.getData().cate1, true )
+              }
+              
+            } else {
+
+              // 편집 모드일 때는 편집 버튼을 저장 버튼으로 바꾸고 이벤트를 재정의 한다. 
+            }
+          },
+          
+          cellEdited : function(cell){
+            var rowData = cell.getRow().getData();
+            if(rowData.isNew !== "Y"){
+              rowData.isEdited = "Y"
+            }           
+          },
+
+        })
+
+        ctable2 = new Tabulator("#tb_category2", {
           ajaxURL : "http://localhost:3000/category/getTableData",
-          //ajaxParams : { size : "1" },
           ajaxConfig : "GET",
           layout : "fitData",
-          //ajaxContentType:"json",
           columns : [
             
             {title : "<input type='checkbox'>", hozAlign:"center", formatter:printChk },
-            {title : "중분류", field : "cate2", width: 200, editor: "input"},
+            {title : "중분류", field : "cate2", width: 700, editor: "input"},
             {title : "키워드 수", field : "count", formatter:prtCntLnk, hozAlign:"center", formatterParams : {add : false} },
-            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
+            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: deleteBtn },
             {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
             {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
             {title : "esID", field : "isNew", hozAlign:"center", visible: false },
             {title : "대분류", field : "cate1", hozAlign:"center", visible: false },
           ],
           pagination : "local",
-          paginationSize : 20,
-          height : "500px",
-          width : "300px",
-          //tableBuilt : function(){ console.log("table built")},
+          paginationSize : 10,
+          // height : "500px",
+          //width : "300px",
+
           cellEdited : function(cell){
             var rowData = cell.getRow().getData();
             if(rowData.isNew !== "Y"){
               rowData.isEdited = "Y"
             }           
           }
-
         })
-        //console.log(ctable)
-        document.getElementById("add-row").addEventListener("click", function(){
-          ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
-        });
-
-        document.getElementById("updt-data").addEventListener("click", function(){
-          var data = ctable.getData();
-          var cate1 = $('.list-group > li[class*=node-selected]')[0]
-          var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)  
-          if(cate1 === undefined){
-            alert("대분류를 선택하세요")
-          } else {
-            for( d of udata){
-              d.cate1 = cate1.innerText.substr(0, cate1.innerText.indexOf(' ('))
-            }
-          }
-          console.log(cate1.innerText)                                                                                                                                   
-          insertData(udata)  
-
-        });
 
         document.getElementById("addCategory1").addEventListener("click", function(){
-          // 이거는 하나씩만 입력하도록 검사해야함 
-          console.log(  )
-          if( $('#cate1wrapper')[0] !== undefined ){
-            return
-          } else {
-            // 대분류 추가버튼 + 클릭시 이벤트
-            // console.log("대분류추가")
-            // var newEl = $(".list-group > li:nth-child(1)")
-            // var buttonSave = '<button id="saveCate1">저장</button>' 버튼 없이 엔터로만 입력
-            var input = '<input type="text" id="newCate1"><button id="cancelCate1">x</button>'
-            $( `<li class="list-group-item node-tree" id="cate1wrapper">${input}</li>`).prependTo(".list-group")
-            document.getElementById("newCate1").addEventListener("keydown", function(key){
-              if(key.code == "Enter"){
-                console.log("save")
-                var value = $('#newCate1').val()
-                if(value !== '' && value !== undefined){
-                  var data = [{ cate1 : value, cate2 : value, keyword : value, isNew : "Y" }]
-                  console.log(data)
-                } else {
-                  alert('입력값이 유효하지 않습니다.')
-                }
-              }
-            })
-            document.getElementById("cancelCate1").addEventListener("click", function(){
-              $('#cate1wrapper').remove();
-            })
+          ctable1.addData([{ isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
+          //changeMode1()
+        });
+
+        document.getElementById("editCategory1").addEventListener("click", function(){
+          
+          if(tb1ViewMode){
+            console.log("편집클릭")
+          } else { 
+            console.log("저장클릭")
+            var data = ctable1.getData()
+            var udata = data.filter( v => v.isNew === "Y" && v.cate1 !== undefined || v.isEdited === "Y" && v.cate1 !== undefined) 
+            insertData(1, udata)
           }
-
+          changeMode1()
         });
-        
-        $('#tree').treeview({
-            data : cateTree,
-            onNodeSelected : function( event, data ){
-              
-              loadData(data.text.substr(0, data.text.indexOf(' (')))
+      
+        // 취소 버튼 클릭시
+        document.getElementById("cancelCategory1").addEventListener("click", function(){
+          if(!tb1ViewMode){
+            var rows = ctable1.getRows()
+            for( i of rows ){
+              if(i.getData().isNew === 'Y'){
+                i.delete()
+              }
             }
+            // 수정한 카테고리들 다시 원복 시키기
+            ctable1.setData()
+            changeMode1()
+          }  
         });
 
+        document.getElementById("addRow").addEventListener("click", function(){
+          ctable2.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
+        });
+        // 검색버튼 클릭
+        document.getElementById("searchCategory2").addEventListener("click", function(){
+          var keyword = $("#searchKeyword").val();
+          console.log(ctable1.getSelectedData());
+          //
+          var category1 = ctable1.getSelectedData()
+          if(category1.length > 0){
+            category1 = ctable1.getSelectedData()[0].cate1
+          } 
+          
+          loadData(category1, false, keyword)
+        });
 
+        document.getElementById("searchKeyword").addEventListener("keypress", function(e){
+          if(e.key === 'Enter'){
+            e.preventDefault()
+            var keyword = $("#searchKeyword").val();
+            console.log(ctable1.getSelectedData());
+            //
+            var category1 = ctable1.getSelectedData()
+            if(category1.length > 0){
+              category1 = ctable1.getSelectedData()[0].cate1
+            } 
+            
+            loadData(category1, false, keyword)
+          }
+        });
 
+        document.getElementById("updateRows").addEventListener("click", function(){
+          var data = ctable2.getData();
+          var udata = data.filter( v => v.isNew === "Y" && v.cate2 !== undefined || v.isEdited === "Y" && v.cate2 !== undefined)  
+          if( ctable1.getSelectedData().length === 0){
+            alert("대분류를 선택하세요")
+            return;
+          } else {
+            for( d of udata){
+              d.cate1 = ctable1.getSelectedData()
+            }
+          }
+                                                                                                                            
+          insertData(2, udata)  
+
+        });
 
       });
 
     </script>
   </head>
   <body>
+    <% include ./index %>
     <div class="row">
       <div class="col-md-2">
         <span>
-          <h4 style="margin-top: 30px;"> 대분류 <button class="btn btn-warning btn-xs" id="addCategory1">+</button></h4>
+          <h4 style="margin-top: 30px; text-align: right" > 
+            
+            <button class='btn btn-default btn-xs' id='editCategory1'>편집</button>  
+            <button class='btn btn-danger btn-xs' id='cancelCategory1' style="display: none;">취소</button>
+            <button class='btn btn-warning btn-xs' id='addCategory1' style="display: none;">+</button>
+          </h4>
           
         </span>
-        <div id="tree"></div>
+
+        <div id="tb_category1" class="table-striped">
+        </div>
       </div>
+
       <div class="col-md-8">
         <h4 style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >카테고리 목록</h4>
         <div style="padding: 50px 50px 50px 100px;">
           <form>
-            <input type="text"> 
-            <button>검색</button>
+            <input type="text" id='searchKeyword'> 
+            <button class='btn btn-default btn-md' id='searchCategory2' type='button'>검색</button>
           </form>
         </div>
 
         <h4>
-          <button id="updt-data"> 저장 </button>
-          <button id="add-row"> 추가 </button>
-          <button id="mrg-row"> 병합 </button>
+          <button class='btn btn-warning btn-md' id="updateRows"> 저장 </button>
+          <button class='btn btn-warning btn-md' id="addRow"> 추가 </button>
+          <button class='btn btn-warning btn-md' id="mergeCategory2"> 병합 </button>
         </h4>
-        <div id="tb_category2">
+        <div id="tb_category2" class="table-bordered">
 
         </div>
       </div>

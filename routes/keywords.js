@@ -1,7 +1,14 @@
 var express = require('express');
 var router = express.Router();
 var esclient = require('../common/esconnect');
-const index = "skt_dictionary"
+var multer = require('multer'); // express에 multer모듈 적용 (for 파일업로드)
+const formidable = require('formidable')
+var upload = multer({ dest: 'uploads/' });
+var XLSX = require('xlsx');
+//var parceXlsx = require('excel');
+//import parseXlsx from 'excel';
+const fs = require('fs');
+const index = "skt_dictionary";
 const util = require('../common/util');
 
 router.get('/', function(req, res, next) {
@@ -37,13 +44,13 @@ router.get('/', function(req, res, next) {
 
       for(c1 of resp.aggregations.ct1.buckets){
         let el1 = {}
-        el1.text = `${c1.key} (${c1.ct2.buckets.length})`
-        //el1.text = c1.key
+        // 카테고리 트리를 만들기 위한 데이터 구조
+        el1.text = c1.key
         el1.nodes = []
         for( c2 of c1.ct2.buckets ){
           let el2 = {}
-          el2.text = `${c2.key} (${c2.doc_count})`
-          //el2.text = c2.key
+          //el2.text = `${c2.key} (${c2.doc_count})`
+          el2.text = c2.key
           el1.nodes.push(el2)
         }
         console.log(el1)
@@ -65,9 +72,9 @@ router.get('/getTableData', function(req, res, next) {
   let must_not = []
   // let filter = []
   // console.log(util.checkSelectVal( req.query.synonymYn, "synonym", must_not))
-  must_not = util.checkSelectVal( req.query.synonym, "synonym", must_not)
-  must_not = util.checkSelectVal( req.query.typo, "typo", must_not) // 필드명 바꾸기
-  must_not = util.checkSelectVal( req.query.relative, "relative" ,must_not) 
+  must_not = util.checkSelectVal( req.query.synonym, "synonyms", must_not)
+  must_not = util.checkSelectVal( req.query.typo, "typos", must_not) // 필드명 바꾸기
+  must_not = util.checkSelectVal( req.query.relative, "rekeywords" ,must_not) 
   console.log(JSON.stringify(must_not))
   if(req.query.keyword !== undefined){
     let qs = {
@@ -146,7 +153,7 @@ router.get('/getTableData', function(req, res, next) {
     console.log(err)
   })
 })
-
+// 후보키워드로 이동 
 router.get("/getPopupData", function(req, res, next){
   console.log("/getPopupData")
 
@@ -183,5 +190,37 @@ router.get("/getPopupData", function(req, res, next){
     console.log(JSON.stringify(error))
   })
 })
+/*
+router.post('/uploadForm', upload.single('file'),function(req, res, next) {
+  console.log('uploaded' + req.file)
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+  var wb = XLSX.readFile(`./excel_data/data.xlsx`)
+  var ws = wb.Sheets["Sheet1"]
+  fs.writeFile(`./excel_data/keywords${uniqueSuffix}.xlsx`, req.file, function(){
+    var buf = fs.readFileSync(`./excel_data/keywords${uniqueSuffix}.xlsx`, 'binary')
+    var wb = XLSX.read(buf, { type : "buffer"});
+    var json_data = XLSX.utils.sheet_to_json(wb)
+  })
+})
+*/
+router.post('/uploadForm',function(req, res, next) {
+  // using formidable
+  var form = new formidable.IncomingForm();
+  form.parse( req, function(err, fields, files){
+    if(err){
+      res.send(500).send("error");
+    }
+    if(files.file.size == 0){
+      // 파일이 Zero size 일 때 
+      console.log("no file")
+    } else {
+      var f = files[Object.keys(files)[0]]
+      var workbook = XLSX.readFile(f.path)
+      console.log(XLSX.utils.sheet_to_json(workbook.Sheets['data']))
+  
+    }
 
+  });
+
+})
 module.exports = router;

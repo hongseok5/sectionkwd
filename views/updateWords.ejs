@@ -28,6 +28,27 @@
         $(html).appendTo("#tableBody")
       }
 
+      var showPopup = (keyword) => {
+        $.ajax({
+          url : ctx + "/keywords/getPopupData?keyword=" + keyword,
+          type : "GET",
+          error : function(e){
+            console.log(e)
+          }, 
+          success : function(resp){
+            console.log(resp)
+            if(resp.length > 0){
+              for( d of resp){
+                $('<li>' + d + '</li>').appendTo("#keywordHighlight")
+              }
+            } else {
+              $('<li> 키워드 예시가 없습니다. </li>').appendTo("#keywordHighlight")
+            }
+            $('#keywordExample').modal("show")
+          }
+        })
+      }
+
       var fetchList = function(){
         if(isEnd) return;
         console.log("from no is " + from)
@@ -99,6 +120,7 @@
     </script>
   </head>
   <body>
+    <% include ./index %>
     <div class="row">
       <div class="col-md-2">
         <h4 style="margin-top: 30px;"> 후보키워드 </h4>
@@ -149,7 +171,28 @@
           </table>
         </div>
       </div>
-      <div class="col-md-2"></div>
+      <div class="col-md-2">
+        <div class="modal" tabindex="-1" role="dialog" id="keywordExample">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"> 키워드 사례</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <ul id="keywordHighlight"></ul>
+              </div>
+              <!--
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+              -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>

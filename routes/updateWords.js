@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var esclient = require('../common/esconnect');
-const index = "skt_ckeywords"
+const index = "skt_nr_keywords"
 const util = require('../common/util');
 
 /* GET users listing. */

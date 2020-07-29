@@ -1,19 +1,24 @@
 var express = require('express');
 var router = express.Router();
-var esclient = require('../common/esconnect')
+var esclient = require('../common/esconnect');
+var util = require('../common/util');
+const e = require('express');
 const index = "skt_dictionary"
 
 
 // 페이지 호출
 router.get('/', function(req, res, next) {
-  console.log("category");
-  let body = {
-    query : {
-      match_all : {
 
-      }
-    },
-    size : 10,
+  console.log("category");
+  res.render("category", {})
+});
+
+// 대분류
+router.get('/getCategoryData', function(req,res) {
+
+  let body = {
+    query : { match_all : { } },
+    size : 0,
     aggs : {
       cate1 : {
         terms : {
@@ -30,44 +35,52 @@ router.get('/', function(req, res, next) {
     }
   }
 
-  esclient.search({ index , body }).then(function(resp){
-    let cateTree = []
+  esclient.search({ index , body }).then( function(resp){
 
+    let cateTree = []
     for( c1 of resp.aggregations.cate1.buckets){
-      // console.log(b)
       let el = {}
-      el.text = `${c1.key} (${c1.doc_count})`;
+      //el.text = `${c1.key} (${c1.doc_count})`;
+      el.cate1 = c1.key
+      el.initValue1 = c1.key
+      el.initValue2 = c2.key
       cateTree.push(el)
     }
 
-    res.render("category", { cateTree })
+    res.status(200).send( cateTree );
   }, function(err){
     console.log(err);
     res.render("category", { message : "error"})
   });
 
-});
+})
 
 
-// * 테이블 조회
+// * 테이블 조회 (중분류)
 router.get('/getTableData', function(req, res, next) { 
 
-  console.log("cate1 : ")
+  console.log("cate1 : " + req.query.cate1 + "cate2 : " + req.query.keyword)
   var query;
   let category1 = req.query.cate1
-  let category2 = req.query.cate2
-  if( category1 === undefined && category2 === undefined){
+  let category2 = req.query.keyword
+
+  if( util.isEmpty(category1) && util.isEmpty(category2)){
     query = {
       match_all : {}
     }
-  } else if ( category1 !== undefined && category2 === undefined ) {
+  } else if ( !util.isEmpty(category1) && util.isEmpty(category2) ) {
     query = {
-      term : { category1 : req.query.cate1 }
+      term : { category1 }
+    }
+  } else if ( util.isEmpty(category1) && !util.isEmpty(category2) ){
+    query = {
+      match : { category2  } 
     }
   } else {
     query = {
-      query_string : { 
-        default_field : req.query.cate2 
+      bool : {
+        filter : [ { term : { category1 }} ],
+        must : [ { match : { category2  }} ]
       }
     }
   }
@@ -111,7 +124,7 @@ router.get('/getTableData', function(req, res, next) {
   });  
 });
 
-  // * 카테고리 입력
+// * 카테고리 입력/수정 컬럼값을 통해 인서트와 UPDATE를 구분해 같이 처리한다.
 router.post('/insertData', function(req, res, next) { 
   console.log("insertData")
   var parray = []
@@ -121,18 +134,17 @@ router.post('/insertData', function(req, res, next) {
 
   let updateDocs = req.body.filter( v => {
     return v.isEdited == "Y"
-  })
-  for( d of req.body){
+  })  
+  // 인서트 처리
+  for( d of insertDocs){
     console.log(d)
     var document = {
       index : index,
       type : "_doc",
-      // id : null,
       body : {    
         category2 : d.cate2,
         category1 : d.cate1,
-        keyword : d.cate2          
-        // doc_as_upsert : true
+        keyword : d.keyword        
       }
     }
     
@@ -143,9 +155,33 @@ router.post('/insertData', function(req, res, next) {
       console.log(JSON.stringify(err))
       res.send("ERR")
     })
-  
-    // parray.push(esclient.update(document))
 
+  }
+
+  for( d of updateDocs){
+    var document = {
+      index : index,
+      type : '_doc',
+      body : {
+        query : {
+          term : {
+            category1 : d.initValue
+          }
+        },
+        script : {
+          lang : "painless",
+          source : `ctx._source['category1'] = '${d.cate1}'`
+        }
+      }
+    }
+
+    esclient.updateByQuery(document).then( v => {
+      console.log(JSON.stringify(v))
+      res.send("OK")
+    }, err => {
+      console.log(JSON.stringify(err))
+      res.send("ERR")
+    })
   }
   /*
   Promise.all(parray).then(vls => {
