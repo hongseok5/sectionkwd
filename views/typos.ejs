@@ -44,14 +44,6 @@
       var prtCntLnk = (cell, formatterParams, onRendered) => {
         return `<a href='#'> ${cell.getValue()} </a>`;
       }
-      /*
-      var prtKwdLnk = (cell, formatterParams, onRendered) => {
-        return `<a href='#'> ${cell._cell.value} </a>`
-      }
-      */
-      // table.setData로 처리하는 것도 한 방법일 수도...
-      // table.setData(URL) 이런식으로 아쟉스 요청 가능
-      // table.setData() 이러면 리로드 됨.
 
       var editedArray = [];
       // 기존의 셀이 수정되었을 때 저장하는 배열
@@ -65,16 +57,7 @@
           layout : "fitDataTable",
           ajaxContentType:"json",
           columns : [
-            {title : "<input type='checkbox'>", hozAlign:"center", formatter:printChk },
-          
-            {title : "중분류", field : "cate2", width: 200, editor: "input"},
-            {title : "키워드 수", field : "count", formatter:prtCntLnk, hozAlign:"center", formatterParams : {add : false} },
-            //{title : "삭제", field : "dbutton", hozAlign:"center", width: 100 , formatter:printButton, formatterParams : {add : false}},
-            {title : "삭제", field : "tbutton", hozAlign:"center", width: 70 , formatter: "buttonCross" },
-            {title : "신규여부", field : "isNew", hozAlign:"center", visible: false },
-            {title : "수정여부", field : "isEdited", hozAlign:"center", visible: false },
-            {title : "esID", field : "isNew", hozAlign:"center", visible: false },
-            {title : "대분류", field : "isEdited", hozAlign:"center", visible: false },
+
           ],
           paginationSize : 20,
           height : "500px",
@@ -88,11 +71,6 @@
             
           },
         })
-        //console.log(ctable)
-        document.getElementById("add-row").addEventListener("click", function(){
-          ctable.addData([{  count: 0 , isNew : "Y"}], true); // default 는 false이고 true이면 행이 위에 생긴다.
-          // ctable.addData([{ cate2 : null, count : 0 }], true); // default 는 false이고 true이면 행이 위에 생긴다.
-        });
 
         document.getElementById("updt-data").addEventListener("click", function(){
           var data = ctable.getData();
@@ -103,9 +81,6 @@
           console.log(udata)                                                                                                                                   
           insertData(udata)                              
         });
-        // 비동기 
-        // var test = document.querySelectorAll("#tb_category2 > div.tabulator-tableHolder > div > div > div:nth-child(2)")
-        // console.log(test);
       });
 
     </script>
@@ -113,20 +88,11 @@
   <body>
     <div class="row">
       <div class="col-md-2">
-        <h4 style="margin-top: 30px;"> 대분류 </h4>
-        <ul style="margin-top: 30px;">
-      
-          <% for(let i = 0; i < data1.cate1s.length; i++){ %>
-            <li><%= data1.cate1s[i].category1 %> ( <%= data1.cate1s[i].count %> )</li>
-          <% } %>
-        </ul>
       </div>
       <div class="col-md-8">
         <p style="margin-top: 30px; margin-bottom: 50px;text-align: center;" >키워드목록</p>
         <h4>
           <button id="updt-data"> 저장 </button>
-          <button id="add-row"> 추가 </button>
-          <button id="mrg-row"> 병합 </button>
         </h4>
         <div id="tb_category2">
 

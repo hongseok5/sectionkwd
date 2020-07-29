@@ -70,8 +70,7 @@ router.get('/getTableData', function(req, res, next) {
   let query;
   let must = []
   let must_not = []
-  // let filter = []
-  // console.log(util.checkSelectVal( req.query.synonymYn, "synonym", must_not))
+
   must_not = util.checkSelectVal( req.query.synonym, "synonyms", must_not)
   must_not = util.checkSelectVal( req.query.typo, "typos", must_not) // 필드명 바꾸기
   must_not = util.checkSelectVal( req.query.relative, "rekeywords" ,must_not) 
@@ -139,9 +138,7 @@ router.get('/getTableData', function(req, res, next) {
         el = h._source
         el.id = h._id
         keywords.push(el)
-        //console.log(el)
       }
-      // console.log(JSON.stringify(keywords))
       res.status(200).send( keywords );
     } else {
       console.log("Error")
@@ -154,42 +151,7 @@ router.get('/getTableData', function(req, res, next) {
   })
 })
 // 후보키워드로 이동 
-router.get("/getPopupData", function(req, res, next){
-  console.log("/getPopupData")
 
-  let body = {
-    query : {
-      query_string : {
-        fields : ["edt_txt_01", "edt_txt_02"],
-        query : req.query.keyword
-      }
-    },
-    highlight : {
-      fields : {
-        edt_txt_01 : { type : "plain"},
-        edt_txt_02 : { type : "plain"}
-      }
-    },
-    size : 5
-  }
-  esclient.search({index : "dm_section", body}).then( resp => {
-    if(resp.error === undefined){
-      let data = []
-      for( h of resp.hits.hits){
-        var text;
-        if( h.highlight.edt_txt_01 !== undefined || h.highlight.edt_txt_02 !== undefined){
-          text = ( h.highlight.edt_txt_01 || "" ) + ( h.highlight.edt_txt_02 || "" )
-          data.push(text)
-        }                        
-      }
-      res.status(200).send( data );
-    } else {
-      res.send(500).send( resp );
-    }
-  }, error => {
-    console.log(JSON.stringify(error))
-  })
-})
 /*
 router.post('/uploadForm', upload.single('file'),function(req, res, next) {
   console.log('uploaded' + req.file)

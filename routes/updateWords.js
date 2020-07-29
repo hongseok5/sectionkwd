@@ -1,10 +1,10 @@
 var express = require('express');
 var router = express.Router();
 var esclient = require('../common/esconnect');
-const index = "skt_nr_keywords"
+const index = "skt_ckeywords"
 const util = require('../common/util');
 
-/* GET users listing. */
+/* 페이지로드 */
 router.get('/', function(req, res, next) {
   console.log("updateWords")
   let body = {
@@ -30,10 +30,9 @@ router.get('/', function(req, res, next) {
     console.log(JSON.stringify(err))    
     res.render("updateWords")
   })
-
-  
 });
 
+// 테이블 조회
 router.get('/getTableData', function(req, res, next) {
   console.log('/getTableData ' + req.query.from )
   let body = {
@@ -61,6 +60,7 @@ router.get('/getTableData', function(req, res, next) {
   
 });
 
+// 선택한 단어를 키워드사전으로 이동
 router.post('/registerDict', function(req, res, next) {
   console.log('/registerDict' + JSON.stringify(req.body.ckeyword))
   
@@ -87,9 +87,49 @@ router.post('/registerDict', function(req, res, next) {
   
 });
 
+// 선택한 단어를 제외키워드로 이동
 router.post('/moveToExcept', function(req, res, next) {
   console.log('/moveToExcept')
   res.render()
 });
+
+// 키워드 클릭시 해당 화면에서 팝업형태로 하이라이트해서 보여줘야함
+router.get("/getPopupData", function(req, res, next){
+  console.log("/getPopupData")
+
+  let body = {
+    query : {
+      query_string : {
+        fields : ["txt1", "txt2"],
+        query : req.query.keyword
+      }
+    },
+    highlight : {
+      fields : {
+        edt_txt_01 : { type : "plain"},
+        edt_txt_02 : { type : "plain"}
+      }
+    },
+    size : 5
+  }
+  esclient.search({index : "skt_sections", body}).then( resp => {
+    if(resp.error === undefined){
+      let data = []
+      for( h of resp.hits.hits){
+        var text;
+        // 필드명 바꿔야함
+        if( h.highlight.edt_txt_01 !== undefined || h.highlight.edt_txt_02 !== undefined){
+          text = ( h.highlight.edt_txt_01 || "" ) + ( h.highlight.edt_txt_02 || "" )
+          data.push(text)
+        }                        
+      }
+      res.status(200).send( data );
+    } else {
+      res.send(500).send( resp );
+    }
+  }, error => {
+    console.log(JSON.stringify(error))
+  })
+})
 
 module.exports = router;
